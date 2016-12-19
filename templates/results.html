@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Power Rankings</title>
+</head>
+<body>
+<h1>Power Rankings</h1>
+Uses historical data of fantasy production to determine the power rankings. Stats are updated every day.
+<br><br>
+
+{% for item in data %}
+   {{ item }}<br>
+{% endfor %}
+
+<br><br>
+<a href = '{{ url_for('matchups') }}'>See complete matchup predictions</a>
+</body>
+</html>

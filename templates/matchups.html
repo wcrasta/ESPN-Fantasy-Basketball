@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <title>Matchups</title>
+</head>
+<body>
+{% for item in data %}
+    {% if (item[-5]|int) > (item[-3]|int) %}
+        <font color='green'>{{ item }}</font>
+    {% elif (item[-5]|int) == (item[-3]|int) %}
+        {{ item }}
+    {% else %}
+        <font color='red'>{{ item }}</font>
+    {% endif %}
+     <br>
+{% endfor %}
+</body>
+</html>
