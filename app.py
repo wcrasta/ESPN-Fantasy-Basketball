@@ -3,7 +3,7 @@ import requests
 from operator import itemgetter
 from flask import Flask, render_template, request
 
-# Holds the tuple returned by calc() function
+# Holds the tuple returned by computeStats() function.
 dataTuple = ()
 
 app = Flask(__name__)
@@ -26,7 +26,7 @@ def matchups():
     data = dataTuple[0]
     return render_template('matchups.html', data=data)
 
-# Scrapes the "Season Stats" table from the ESPN Fantasy Standings
+# Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
     source_code = requests.get(url)
     plain_text = source_code.text
@@ -36,6 +36,7 @@ def setup(url):
     teams = []
 
     rows = seasonStats.findAll('tr')[3:]
+    # Creates a 2-D matrix which resembles the Season Stats table.
     for row in range(len(rows)):
         team_row = []
         for column in rows[row].findAll('td'):
@@ -49,47 +50,54 @@ def setup(url):
 
         # Add each team to a teams matrix.
         teams.append(team_row)
-    calc(teams)
 
-def calc(teams):
-    # Initialize the dictionary
+    computeStats(teams)
+
+# Computes the power rankings and matchup predictions, and stores the values in a tuple.
+def computeStats(teams):
+    # Initialize the dictionary which will hold information about each team along with their "power rankings score".
     teamDict = {}
     for team in teams:
         teamDict[team[1]] = 0
-    stringList = []
+
+    matchupsList = []
     for team1 in teams:
         for team2 in teams:
             score = calculateScore(team1[2:], team2[2:])
             if team1 != team2:
+                # The value for the dictionary is the power rankings score. A win increases the score and a loss
+                # decreases the "PR" score.
                 if score[0] > score[1]:
                     teamDict[team1[1]] += 1
                 elif score[0] < score[1]:
                     teamDict[team1[1]] -= 1
-                stringList.append(team1[1] + ' vs. ' + team2[1] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
-        stringList.append('*' * 100)
+                # map(str, score) is for formatting the score tuple into a string.
+                matchupsList.append(team1[1] + ' vs. ' + team2[1] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
+        matchupsList.append('*' * 100)
 
-    rawListDict = dict(sorted(teamDict.items(), key=itemgetter(1), reverse=True))
-
-    # Check if two keys have the same value.
+    # Check if two keys in the dictionary have the same value (used to process ties in PR score).
     result = {}
-    for val in rawListDict:
-        if rawListDict[val] in result:
-            result[rawListDict[val]].append(val)
+    for val in teamDict:
+        if teamDict[val] in result:
+            result[teamDict[val]].append(val)
         else:
-            result[rawListDict[val]] = [val]
+            result[teamDict[val]] = [val]
 
-    # Sort the dictionary.
+    # Sort the dictionary by greatest PR score.
     sortedDict = sorted(result.items(), key=itemgetter(0), reverse=True)
 
+    # Contains the Power Rankings.
     rankingsList = []
     counter = 1
+    # Keys are the PR score, values are the team names.
     for k, v in sortedDict:
         rankingsList.append(str(counter) + '. ' + ', '.join(v))
         counter+=1
 
     global dataTuple
-    dataTuple = [stringList, rankingsList]
+    dataTuple = [matchupsList, rankingsList]
 
+# Calculates the score for individual matchups.
 def calculateScore(teamA, teamB):
     wins = 0
     losses = 0
@@ -98,7 +106,7 @@ def calculateScore(teamA, teamB):
     for i, (a, b) in enumerate(zip(teamA, teamB)):
         a = float(a)
         b = float(b)
-        # turnovers
+        # When comparing turnovers, having a smaller value is a "win".
         if i == 7:
             if a < b:
                 wins += 1
@@ -116,8 +124,9 @@ def calculateScore(teamA, teamB):
 
     return wins, losses, ties
 
+# Run the Flask app.
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
 
-
+# Comment the if statement above and uncomment the line below to debug Python code.
 # setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
