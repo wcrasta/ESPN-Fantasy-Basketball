@@ -13,9 +13,9 @@ def index():
     if request.method == 'POST':
         # Get the URL that the user entered in the form.
         url = request.form['url']
-        teams = setup(url)
+        teams, turnoverCol = setup(url)
         session["url"] = url
-        matchups, rankings = computeStats(teams)
+        matchups, rankings = computeStats(teams, turnoverCol)
         return render_template('results.html', rankings=rankings)
     else:
         return render_template('index.html')
@@ -24,8 +24,8 @@ def index():
 @app.route('/matchups')
 def matchups():
     url = session.get("url")
-    teams = setup(url)
-    matchups, rankings = computeStats(teams)
+    teams, turnoverCol = setup(url)
+    matchups, rankings = computeStats(teams, turnoverCol)
     return render_template('matchups.html', matchups=matchups)
 
 
@@ -37,6 +37,12 @@ def setup(url):
 
     seasonStats = soup.find('table', {'id': 'statsTable'})
     teams = []
+    turnoverCol = 0
+    catlist = seasonStats.findAll('tr')[2].findAll('a')
+    for category in catlist:
+        if str(unicode(category.string)) == 'TO':
+            turnoverCol = catlist.index(category)
+            break
 
     rows = seasonStats.findAll('tr')[3:]
     # Creates a 2-D matrix which resembles the Season Stats table.
@@ -44,7 +50,6 @@ def setup(url):
         team_row = []
         for column in rows[row].findAll('td'):
             team_row.append(column.getText())
-
         # Get rid of useless columns.
         del team_row[2]
         del team_row[-1]
@@ -53,13 +58,12 @@ def setup(url):
 
         # Add each team to a teams matrix.
         teams.append(team_row)
-
-    return teams
+    return teams, turnoverCol
 
 
 # Computes the power rankings and matchup predictions, and stores the
 # values in a tuple.
-def computeStats(teams):
+def computeStats(teams, turnoverCol):
     # Initialize the dictionary which will hold information about each team
     # along with their "power rankings score".
     teamDict = {}
@@ -69,7 +73,7 @@ def computeStats(teams):
     matchupsList = []
     for team1 in teams:
         for team2 in teams:
-            score = calculateScore(team1[2:], team2[2:])
+            score = calculateScore(team1[2:], team2[2:], turnoverCol)
             if team1 != team2:
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
@@ -107,7 +111,7 @@ def computeStats(teams):
 
 
 # Calculates the score for individual matchups.
-def calculateScore(teamA, teamB):
+def calculateScore(teamA, teamB, turnoverCol):
     wins = 0
     losses = 0
     ties = 0
@@ -116,7 +120,7 @@ def calculateScore(teamA, teamB):
         a = float(a)
         b = float(b)
         # When comparing turnovers, having a smaller value is a "win".
-        if i == 7:
+        if i == turnoverCol:
             if a < b:
                 wins += 1
             elif a == b:
