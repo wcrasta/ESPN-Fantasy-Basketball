@@ -117,23 +117,24 @@ def calculateScore(teamA, teamB, turnoverCol):
     ties = 0
 
     for i, (a, b) in enumerate(zip(teamA, teamB)):
-        a = float(a)
-        b = float(b)
-        # When comparing turnovers, having a smaller value is a "win".
-        if i == turnoverCol:
-            if a < b:
-                wins += 1
-            elif a == b:
-                ties += 1
+        if a != '' and b != '':
+            a = float(a)
+            b = float(b)
+            # When comparing turnovers, having a smaller value is a "win".
+            if i == turnoverCol:
+                if a < b:
+                    wins += 1
+                elif a == b:
+                    ties += 1
+                else:
+                    losses += 1
             else:
-                losses += 1
-        else:
-            if a > b:
-                wins += 1
-            elif a == b:
-                ties += 1
-            else:
-                losses += 1
+                if a > b:
+                    wins += 1
+                elif a == b:
+                    ties += 1
+                else:
+                    losses += 1
 
     return wins, losses, ties
 
