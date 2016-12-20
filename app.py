@@ -1,30 +1,33 @@
 from bs4 import BeautifulSoup
 import requests
 from operator import itemgetter
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 
-# Holds the tuple returned by computeStats() function.
-dataTuple = ()
 
 app = Flask(__name__)
+app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         # Get the URL that the user entered in the form.
         url = request.form['url']
-        setup(url)
-        # dataTuple[1] holds information about each team along with their "power rankings score".
-        data = dataTuple[1]
-        return render_template('results.html', data=data)
+        teams = setup(url)
+        session["url"] = url
+        matchups, rankings = computeStats(teams)
+        return render_template('results.html', rankings=rankings)
     else:
         return render_template('index.html')
 
+
 @app.route('/matchups')
 def matchups():
-    # dataTuple[1] holds complete matchup predictions data.
-    data = dataTuple[0]
-    return render_template('matchups.html', data=data)
+    url = session.get("url")
+    teams = setup(url)
+    matchups, rankings = computeStats(teams)
+    return render_template('matchups.html', matchups=matchups)
+
 
 # Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
@@ -51,11 +54,14 @@ def setup(url):
         # Add each team to a teams matrix.
         teams.append(team_row)
 
-    computeStats(teams)
+    return teams
 
-# Computes the power rankings and matchup predictions, and stores the values in a tuple.
+
+# Computes the power rankings and matchup predictions, and stores the
+# values in a tuple.
 def computeStats(teams):
-    # Initialize the dictionary which will hold information about each team along with their "power rankings score".
+    # Initialize the dictionary which will hold information about each team
+    # along with their "power rankings score".
     teamDict = {}
     for team in teams:
         teamDict[team[1]] = 0
@@ -71,11 +77,14 @@ def computeStats(teams):
                     teamDict[team1[1]] += 1
                 elif score[0] < score[1]:
                     teamDict[team1[1]] -= 1
-                # map(str, score) is for formatting the score tuple into a string.
-                matchupsList.append(team1[1] + ' vs. ' + team2[1] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
+                # map(str, score) is for formatting the score tuple into a
+                # string.
+                matchupsList.append(
+                    team1[1] + ' vs. ' + team2[1] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
         matchupsList.append('*' * 100)
 
-    # Check if two keys in the dictionary have the same value (used to process ties in PR score).
+    # Check if two keys in the dictionary have the same value (used to process
+    # ties in PR score).
     result = {}
     for val in teamDict:
         if teamDict[val] in result:
@@ -92,10 +101,10 @@ def computeStats(teams):
     # Keys are the PR score, values are the team names.
     for k, v in sortedDict:
         rankingsList.append(str(counter) + '. ' + ', '.join(v))
-        counter+=1
+        counter += 1
 
-    global dataTuple
-    dataTuple = [matchupsList, rankingsList]
+    return matchupsList, rankingsList
+
 
 # Calculates the score for individual matchups.
 def calculateScore(teamA, teamB):
@@ -123,6 +132,7 @@ def calculateScore(teamA, teamB):
                 losses += 1
 
     return wins, losses, ties
+
 
 # Run the Flask app.
 if __name__ == '__main__':

@@ -6,7 +6,7 @@
 </head>
 <body>
 <h1>Complete Matchup Predictions:</h1>
-{% for item in data %}
+{% for item in matchups %}
     {% if (item[-5]|int) > (item[-3]|int) %}
         <font color='green'>{{ item }}</font>
     {% elif (item[-5]|int) == (item[-3]|int) %}
