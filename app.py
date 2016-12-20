@@ -1,8 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 from operator import itemgetter
-from flask import Flask, render_template, request, session, redirect, url_for
-
+from flask import Flask, render_template, request, session
 
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
@@ -45,7 +44,7 @@ def setup(url):
     turnoverCol = 0
     catlist = seasonStats.findAll('tr')[2].findAll('a')
     for category in catlist:
-        if str(unicode(category.string)) == 'TO':
+        if str(category.string) == 'TO':
             turnoverCol = catlist.index(category)
             break
 
