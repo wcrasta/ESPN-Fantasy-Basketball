@@ -32,4 +32,5 @@ If you don't know how to implement something, but do have an idea that you would
 ## Credits
 
 Author: Warren Crasta (warrencrasta@gmail.com)
+
 Contributor: Wayne Crasta
