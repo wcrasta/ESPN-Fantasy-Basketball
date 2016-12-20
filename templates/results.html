@@ -5,14 +5,19 @@
 </head>
 <body>
 <h1>Power Rankings</h1>
-Uses historical data of fantasy production to determine the power rankings. Stats are updated every day.
-<br><br>
+<p>Power Rankings are automatically updated everyday. In the event of a tie in the rankings, multiple teams will
+appear on the same line, delimited by a comma. </p>
 
 {% for item in data %}
    {{ item }}<br>
 {% endfor %}
 
-<br><br>
+<br>
 <a href = '{{ url_for('matchups') }}'>See complete matchup predictions</a>
+<h2>How It Works</h2>
+<p> The code scrapes the "Season Stats" table from the League Standings page. It then compares a team's stats for the
+    whole season against the stats for every other team and computes the score. The result of all these comparsions are
+    displayed in the link above for the user to see. Teams with more wins against their peers are ranked higher in the
+    "Power Rankings".</p>
 </body>
 </html>

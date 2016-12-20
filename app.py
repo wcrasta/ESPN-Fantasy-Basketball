@@ -128,5 +128,5 @@ def calculateScore(teamA, teamB):
 if __name__ == '__main__':
     app.run()
 
-# Comment the if statement above and uncomment the line below to debug Python code.
+# Comment out the if statement above and uncomment the line below to debug Python code.
 # setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')

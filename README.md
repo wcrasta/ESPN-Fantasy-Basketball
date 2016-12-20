@@ -10,7 +10,7 @@ To develop, you need Python & Flask. For a list of Python dependencies, see `req
 
 ## How It Works
 
-The code uses BeautifulSoup to scrape the "Season Stats" table from the League Standings page. It then compares a team's stats for the whole season against the stats for every other team and computes the score. The result of all these comparsions are displayed for the user to see. Teams with more wins against their peers are ranked higher in the "Power Rankings". If you are confused about how to use the app, check the demo above -- everything is quite intuitive. 
+The code uses BeautifulSoup to scrape the "Season Stats" table from the League Standings page. It then compares a team's stats for the whole season against the stats for every other team and computes the score. The result of all these comparsions are displayed for the user to see. Teams with more wins against their peers are ranked higher in the "Power Rankings".
 
 ## Improvements/Possible Added Features
 
@@ -32,3 +32,4 @@ If you don't know how to implement something, but do have an idea that you would
 ## Credits
 
 Author: Warren Crasta (warrencrasta@gmail.com)
+Contributor: Wayne Crasta
