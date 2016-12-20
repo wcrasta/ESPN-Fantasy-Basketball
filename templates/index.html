@@ -14,6 +14,9 @@
 
 <form method= 'POST' action='/'>
     <strong>Enter URL of standings page (ex: http://games.espn.com/fba/standings?leagueId=224165&amp;seasonId=2017):</strong><br>
+    {% if invalidURL: %}
+            <font color="red">Either URL is incorrect or league is private.</font></br>
+    {% endif %}
   <input type='text' name='url'>
   <br><br>
   <input type='submit' value='Submit'>

@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 from operator import itemgetter
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect, url_for
 
 
 app = Flask(__name__)
@@ -13,7 +13,12 @@ def index():
     if request.method == 'POST':
         # Get the URL that the user entered in the form.
         url = request.form['url']
-        teams, turnoverCol = setup(url)
+        invalidURL = False
+        try:
+            teams, turnoverCol = setup(url)
+        except:
+            invalidURL = True
+            return render_template('index.html', invalidURL=invalidURL)
         session["url"] = url
         matchups, rankings = computeStats(teams, turnoverCol)
         return render_template('results.html', rankings=rankings)
