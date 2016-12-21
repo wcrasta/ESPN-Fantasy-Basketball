@@ -28,7 +28,10 @@ def index():
 @app.route('/rankings/<leagueId>')
 def rankings(leagueId):
     url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId=2017'.format(str(leagueId))
-    teams, turnoverCol = setup(url)
+    try:
+        teams, turnoverCol = setup(url)
+    except:
+        return redirect(url_for('index'))
     matchups, rankings = computeStats(teams, turnoverCol)
     return render_template('results.html', rankings=rankings, leagueId=leagueId)
 
@@ -36,7 +39,10 @@ def rankings(leagueId):
 @app.route('/matchups/<leagueId>')
 def matchups(leagueId):
     url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId=2017'.format(str(leagueId))
-    teams, turnoverCol = setup(url)
+    try:
+        teams, turnoverCol = setup(url)
+    except:
+        return redirect(url_for('index'))
     matchups, rankings = computeStats(teams, turnoverCol)
     return render_template('matchups.html', matchups=matchups)
 
