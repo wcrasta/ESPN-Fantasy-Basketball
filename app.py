@@ -52,13 +52,9 @@ def setup(url):
     # Creates a 2-D matrix which resembles the Season Stats table.
     for row in range(len(rows)):
         team_row = []
-        for column in rows[row].findAll('td'):
+        # The first 3 columns are always present.
+        for column in rows[row].findAll('td')[:(3+len(catlist))]:
             team_row.append(column.getText())
-        # Get rid of useless columns.
-        del team_row[2]
-        del team_row[-1]
-        del team_row[-1]
-        del team_row[-1]
 
         # Add each team to a teams matrix.
         teams.append(team_row)
@@ -77,7 +73,7 @@ def computeStats(teams, turnoverCol):
     matchupsList = []
     for team1 in teams:
         for team2 in teams:
-            score = calculateScore(team1[2:], team2[2:], turnoverCol)
+            score = calculateScore(team1[3:], team2[3:], turnoverCol)
             if team1 != team2:
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
@@ -121,6 +117,7 @@ def calculateScore(teamA, teamB, turnoverCol):
     ties = 0
 
     for i, (a, b) in enumerate(zip(teamA, teamB)):
+        # Ignore empty values.
         if a != '' and b != '':
             a = float(a)
             b = float(b)
@@ -141,7 +138,6 @@ def calculateScore(teamA, teamB, turnoverCol):
                     losses += 1
 
     return wins, losses, ties
-
 
 # Run the Flask app.
 if __name__ == '__main__':
