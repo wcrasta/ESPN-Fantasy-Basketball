@@ -6,8 +6,9 @@
 </head>
 <body>
 <h1>Complete Matchup Predictions:</h1>
+<a href = '{{ url_for('analysis') }}'>See further analysis</a><br/><br/>
 {% for item in matchups %}
-    {% if item[-1] == '*' %}
+    {% if item == ('*' * 100) %}
         {{ item }} <br />
     {% else %}
         {% set results = item.split()[-1] %}
@@ -15,6 +16,8 @@
         {% set l = (results.split('-')[1]|int) %}
         {% if w > l %}
             <font color='green'>{{ item }}</font>
+        {% elif w == l %}
+            {{ item }}
         {% else %}
             <font color='red'>{{ item }}</font>
         {% endif %}

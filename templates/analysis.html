@@ -2,22 +2,28 @@
 <html lang='en'>
 <head>
     <meta charset='UTF-8'>
-    <title>Matchups</title>
+    <title>Further Analysis</title>
 </head>
 <body>
-<h1>Complete Matchup Predictions:</h1>
-
+<h1>Further Analysis</h1>
 {% set count = 0 %}
-{% for item2 in list2 %}
-    {% if (matchups[count][-5]|int) > (matchups[count][-3]|int) %}
-        <font color='green'>{{ item2 }}</font>
-    {% elif (matchups[count][-5]|int) == (matchups[count][-3]|int) %}
-        {{ item2 }}
+{% for item in analysis %}
+    {% if item == ('*' * 100) %}
+        {{ item }} <br />
     {% else %}
-        <font color='red'>{{ item2 }}</font>
+        {% set results = matchups[count].split()[-1] %}
+        {% set w = (results.split('-')[0]|int) %}
+        {% set l = (results.split('-')[1]|int) %}
+        {% if w > l %}
+            <font color='green'>{{ item }}</font>
+        {% elif w == l %}
+            {{ item }}
+        {% else %}
+            <font color='red'>{{ item }}</font>
+        {% endif %}
+        <br/>
     {% endif %}
-     <br>
-{% set count = count + 1 %}
+    {% set count = count + 1 %}
 {% endfor %}
 </body>
 </html>

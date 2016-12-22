@@ -18,7 +18,7 @@ def index():
             invalidURL = True
             return render_template('index.html', invalidURL=invalidURL)
         session["url"] = url
-        matchups, rankings, list2 = computeStats(teams, categories)
+        matchups, rankings, analysis = computeStats(teams, categories)
         return render_template('results.html', rankings=rankings)
     else:
         return render_template('index.html')
@@ -28,15 +28,15 @@ def index():
 def matchups():
     url = session.get("url")
     teams, categories = setup(url)
-    matchups, rankings, list2 = computeStats(teams, categories)
+    matchups, rankings, analysis = computeStats(teams, categories)
     return render_template('matchups.html', matchups=matchups)
 
 @app.route('/analysis')
 def analysis():
     url = session.get("url")
     teams, categories = setup(url)
-    matchups, rankings, list2 = computeStats(teams, categories)
-    return render_template('analysis.html', list2=list2, matchups=matchups)
+    matchups, rankings, analysis = computeStats(teams, categories)
+    return render_template('analysis.html', analysis=analysis, matchups=matchups)
 
 # Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
@@ -71,10 +71,10 @@ def computeStats(teams, categories):
         teamDict[team[1]] = 0
 
     matchupsList = []
-    list2 = []
+    analysisList = []
     for team1 in teams:
         for team2 in teams:
-            score = calculateScore(team1[3:], team2[3:], categories)
+            score, wonList, lossList = calculateScore(team1[3:], team2[3:], categories)
             if team1 != team2:
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
@@ -86,10 +86,10 @@ def computeStats(teams, categories):
                 # string.
                 matchupsList.append(
                     team1[1] + ' vs. ' + team2[1] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
-                list2.append(team1[1] + ' vs. ' + team2[1] + ' -- ' + team1[1] + ' won ' + ', '.join(wonList) + '. '
+                analysisList.append(team1[1] + ' vs. ' + team2[1] + ' -- ' + team1[1] + ' won ' + ', '.join(wonList) + '. '
                 + team1[1] + ' lost ' + ', '.join(lossList) + '.')
         matchupsList.append('*' * 100)
-        list2.append('*' * 100)
+        analysisList.append('*' * 100)
 
     # Check if two keys in the dictionary have the same value (used to process
     # ties in PR score).
@@ -111,7 +111,7 @@ def computeStats(teams, categories):
         rankingsList.append(str(counter) + '. ' + ', '.join(v))
         counter += 1
 
-    return matchupsList, rankingsList, list2
+    return matchupsList, rankingsList, analysisList
 
 
 # Calculates the score for individual matchups.
@@ -119,9 +119,7 @@ def calculateScore(teamA, teamB, categories):
     wins = 0
     losses = 0
     ties = 0
-    global wonList
     wonList = []
-    global lossList
     lossList = []
 
     for category in categories:
@@ -154,11 +152,12 @@ def calculateScore(teamA, teamB, categories):
                     losses += 1
                     lossList.append(categories[i] + ' (' + str(round((a-b), 4)) + ')')
 
-    return wins, losses, ties
+    valuesTuple = ((wins, losses, ties), wonList, lossList)
+    return valuesTuple
 
 # Run the Flask app.
 if __name__ == '__main__':
-   app.run(debug=True)
+   app.run()
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
 # teams, categories = setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
