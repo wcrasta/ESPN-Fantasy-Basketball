@@ -1,13 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='en'>
 <head>
-    <meta charset="UTF-8">
-    <title></title>
+    <meta charset='UTF-8'>
+    <title>Matchups</title>
 </head>
 <body>
+<h1>Complete Matchup Predictions:</h1>
 
-{% for item in list2 %}
-    {{ item }}<br/>
+{% set count = 0 %}
+{% for item2 in list2 %}
+    {% if (matchups[count][-5]|int) > (matchups[count][-3]|int) %}
+        <font color='green'>{{ item2 }}</font>
+    {% elif (matchups[count][-5]|int) == (matchups[count][-3]|int) %}
+        {{ item2 }}
+    {% else %}
+        <font color='red'>{{ item2 }}</font>
+    {% endif %}
+     <br>
+{% set count = count + 1 %}
 {% endfor %}
 </body>
 </html>

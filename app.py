@@ -6,7 +6,6 @@ from flask import Flask, render_template, request, session
 app = Flask(__name__)
 app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -14,12 +13,12 @@ def index():
         url = request.form['url']
         invalidURL = False
         try:
-            teams, turnoverCol = setup(url)
+            teams, categories = setup(url)
         except:
             invalidURL = True
             return render_template('index.html', invalidURL=invalidURL)
         session["url"] = url
-        matchups, rankings, list2 = computeStats(teams, turnoverCol)
+        matchups, rankings, list2 = computeStats(teams, categories)
         return render_template('results.html', rankings=rankings)
     else:
         return render_template('index.html')
@@ -28,16 +27,16 @@ def index():
 @app.route('/matchups')
 def matchups():
     url = session.get("url")
-    teams, turnoverCol = setup(url)
-    matchups, rankings, list2 = computeStats(teams, turnoverCol)
+    teams, categories = setup(url)
+    matchups, rankings, list2 = computeStats(teams, categories)
     return render_template('matchups.html', matchups=matchups)
 
 @app.route('/analysis')
 def analysis():
     url = session.get("url")
-    teams, turnoverCol = setup(url)
-    matchups, rankings, list2 = computeStats(teams, turnoverCol)
-    return render_template('analysis.html', list2=list2)
+    teams, categories = setup(url)
+    matchups, rankings, list2 = computeStats(teams, categories)
+    return render_template('analysis.html', list2=list2, matchups=matchups)
 
 # Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
@@ -47,29 +46,24 @@ def setup(url):
 
     seasonStats = soup.find('table', {'id': 'statsTable'})
     teams = []
-    turnoverCol = 0
-    catlist = seasonStats.findAll('tr')[2].findAll('a')
-    for category in catlist:
-        if str(category.string) == 'TO':
-            turnoverCol = catlist.index(category)
-            break
-
+    categories = [link.string for link in seasonStats.findAll('tr')[2].findAll('a')]
+  
     rows = seasonStats.findAll('tr')[3:]
     # Creates a 2-D matrix which resembles the Season Stats table.
     for row in range(len(rows)):
         team_row = []
         # The first 3 columns are always present.
-        for column in rows[row].findAll('td')[:(3+len(catlist))]:
+        for column in rows[row].findAll('td')[:(3+len(categories))]:
             team_row.append(column.getText())
 
         # Add each team to a teams matrix.
         teams.append(team_row)
-    return teams, turnoverCol
+    return teams, categories
 
 
 # Computes the power rankings and matchup predictions, and stores the
 # values in a tuple.
-def computeStats(teams, turnoverCol):
+def computeStats(teams, categories):
     # Initialize the dictionary which will hold information about each team
     # along with their "power rankings score".
     teamDict = {}
@@ -80,7 +74,7 @@ def computeStats(teams, turnoverCol):
     list2 = []
     for team1 in teams:
         for team2 in teams:
-            score = calculateScore(team1[3:], team2[3:], turnoverCol)
+            score = calculateScore(team1[3:], team2[3:], categories)
             if team1 != team2:
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
@@ -121,7 +115,7 @@ def computeStats(teams, turnoverCol):
 
 
 # Calculates the score for individual matchups.
-def calculateScore(teamA, teamB, turnoverCol):
+def calculateScore(teamA, teamB, categories):
     wins = 0
     losses = 0
     ties = 0
@@ -129,7 +123,12 @@ def calculateScore(teamA, teamB, turnoverCol):
     wonList = []
     global lossList
     lossList = []
-    categories =['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
+
+    for category in categories:
+        if category == 'TO':
+            turnoverCol = categories.index(category)
+            break
+
     for i, (a, b) in enumerate(zip(teamA, teamB)):
         # Ignore empty values.
         if a != '' and b != '':
@@ -159,8 +158,8 @@ def calculateScore(teamA, teamB, turnoverCol):
 
 # Run the Flask app.
 if __name__ == '__main__':
-    app.run()
+   app.run(debug=True)
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
-#teams, turnoverCol = setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
-#matchups, rankings, list2 = computeStats(teams, turnoverCo)
+# teams, categories = setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
+# matchups, rankings, list2 = computeStats(teams, categories)
