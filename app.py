@@ -1,10 +1,10 @@
 from bs4 import BeautifulSoup
 import requests
 from operator import itemgetter
-from flask import Flask, render_template, request, redirect, url_for
-from urlparse import parse_qs, urlparse
+from flask import Flask, render_template, request, session
 
 app = Flask(__name__)
+app.secret_key = 'A0Zr98j/3yX R~XHH!jmN]LWX/,?RT'
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -18,31 +18,17 @@ def index():
         except:
             invalidURL = True
             return render_template('index.html', invalidURL=invalidURL)
-        query = parse_qs(urlparse(url).query, keep_blank_values=True)
-        leagueId = str(query['leagueId'][0])
-        return redirect(url_for('rankings', leagueId=leagueId))
+        session["url"] = url
+        matchups, rankings = computeStats(teams, turnoverCol)
+        return render_template('results.html', rankings=rankings)
     else:
         return render_template('index.html')
 
 
-@app.route('/rankings/<leagueId>')
-def rankings(leagueId):
-    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId=2017'.format(str(leagueId))
-    try:
-        teams, turnoverCol = setup(url)
-    except:
-        return redirect(url_for('index'))
-    matchups, rankings = computeStats(teams, turnoverCol)
-    return render_template('results.html', rankings=rankings, leagueId=leagueId)
-
-
-@app.route('/matchups/<leagueId>')
-def matchups(leagueId):
-    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId=2017'.format(str(leagueId))
-    try:
-        teams, turnoverCol = setup(url)
-    except:
-        return redirect(url_for('index'))
+@app.route('/matchups')
+def matchups():
+    url = session.get("url")
+    teams, turnoverCol = setup(url)
     matchups, rankings = computeStats(teams, turnoverCol)
     return render_template('matchups.html', matchups=matchups)
 
@@ -67,7 +53,7 @@ def setup(url):
     for row in range(len(rows)):
         team_row = []
         # The first 3 columns are always present.
-        for column in rows[row].findAll('td')[:(3 + len(catlist))]:
+        for column in rows[row].findAll('td')[:(3+len(catlist))]:
             team_row.append(column.getText())
 
         # Add each team to a teams matrix.
@@ -152,7 +138,6 @@ def calculateScore(teamA, teamB, turnoverCol):
                     losses += 1
 
     return wins, losses, ties
-
 
 # Run the Flask app.
 if __name__ == '__main__':
