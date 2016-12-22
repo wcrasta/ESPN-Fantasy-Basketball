@@ -144,6 +144,7 @@ def calculateScore(teamA, teamB, categories):
     wonList = []
     lossList = []
 
+    turnoverCol = -1
     for category in categories:
         if category == 'TO':
             turnoverCol = categories.index(category)
