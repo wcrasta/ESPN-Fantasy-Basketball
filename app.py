@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 from operator import itemgetter
 from flask import Flask, render_template, request, redirect, url_for
-from urlparse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlparse
 
 app = Flask(__name__)
 
