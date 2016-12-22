@@ -47,8 +47,9 @@ def rankings():
         try:
             leagueId = str(query['leagueId'][0])
             seasonId = str(query['seasonId'][0])
+            return redirect(url_for('rankings', leagueId=leagueId, seasonId=seasonId))
         except:
-            redirect(url_for('index'))
+            redirect(url_for('index',invalidURL=True))
     else:
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
