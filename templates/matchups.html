@@ -41,6 +41,9 @@
                     <div class="row">
                         <div class="col-sm-8 col-sm-offset-2 text">
                             <h1><strong>Complete Matchup Predictions</strong></h1>
+                        <p>
+                            <a href = '{{ url_for('analysis') }}'><strong>See further analysis</strong></a>
+                        </p>
                             <div class="description">
                                 {% for item in matchups %}
                                     {% if (item[-5]|int) > (item[-3]|int) %}

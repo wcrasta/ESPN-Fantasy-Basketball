@@ -19,7 +19,7 @@ def index():
             invalidURL = True
             return render_template('index.html', invalidURL=invalidURL)
         session["url"] = url
-        matchups, rankings = computeStats(teams, turnoverCol)
+        matchups, rankings, list2 = computeStats(teams, turnoverCol)
         return render_template('results.html', rankings=rankings)
     else:
         return render_template('index.html')
@@ -29,9 +29,15 @@ def index():
 def matchups():
     url = session.get("url")
     teams, turnoverCol = setup(url)
-    matchups, rankings = computeStats(teams, turnoverCol)
+    matchups, rankings, list2 = computeStats(teams, turnoverCol)
     return render_template('matchups.html', matchups=matchups)
 
+@app.route('/analysis')
+def analysis():
+    url = session.get("url")
+    teams, turnoverCol = setup(url)
+    matchups, rankings, list2 = computeStats(teams, turnoverCol)
+    return render_template('analysis.html', list2=list2)
 
 # Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
@@ -71,6 +77,7 @@ def computeStats(teams, turnoverCol):
         teamDict[team[1]] = 0
 
     matchupsList = []
+    list2 = []
     for team1 in teams:
         for team2 in teams:
             score = calculateScore(team1[3:], team2[3:], turnoverCol)
@@ -85,7 +92,10 @@ def computeStats(teams, turnoverCol):
                 # string.
                 matchupsList.append(
                     team1[1] + ' vs. ' + team2[1] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
+                list2.append(team1[1] + ' vs. ' + team2[1] + ' -- ' + team1[1] + ' won ' + ', '.join(wonList) + '. '
+                + team1[1] + ' lost ' + ', '.join(lossList) + '.')
         matchupsList.append('*' * 100)
+        list2.append('*' * 100)
 
     # Check if two keys in the dictionary have the same value (used to process
     # ties in PR score).
@@ -107,7 +117,7 @@ def computeStats(teams, turnoverCol):
         rankingsList.append(str(counter) + '. ' + ', '.join(v))
         counter += 1
 
-    return matchupsList, rankingsList
+    return matchupsList, rankingsList, list2
 
 
 # Calculates the score for individual matchups.
@@ -115,7 +125,11 @@ def calculateScore(teamA, teamB, turnoverCol):
     wins = 0
     losses = 0
     ties = 0
-
+    global wonList
+    wonList = []
+    global lossList
+    lossList = []
+    categories =['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
     for i, (a, b) in enumerate(zip(teamA, teamB)):
         # Ignore empty values.
         if a != '' and b != '':
@@ -125,17 +139,21 @@ def calculateScore(teamA, teamB, turnoverCol):
             if i == turnoverCol:
                 if a < b:
                     wins += 1
+                    wonList.append(categories[i] + ' (' + str(b-a) + ')')
                 elif a == b:
                     ties += 1
                 else:
                     losses += 1
+                    lossList.append(categories[i] + ' (' + str(b-a) + ')')
             else:
                 if a > b:
                     wins += 1
+                    wonList.append(categories[i] + ' (' + str(round((a-b), 4)) +')')
                 elif a == b:
                     ties += 1
                 else:
                     losses += 1
+                    lossList.append(categories[i] + ' (' + str(round((a-b), 4)) + ')')
 
     return wins, losses, ties
 
@@ -144,4 +162,5 @@ if __name__ == '__main__':
     app.run()
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
-# setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
+#teams, turnoverCol = setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
+#matchups, rankings, list2 = computeStats(teams, turnoverCo)
