@@ -13,7 +13,7 @@ appear on the same line, delimited by a comma. </p>
 {% endfor %}
 
 <br>
-<a href = '{{ url_for('matchups') }}'>See complete matchup predictions</a>
+<a href = '{{ url_for('matchups', leagueId=leagueId, seasonId=seasonId) }}'>See complete matchup predictions</a>
 <h2>How It Works</h2>
 <p> The code scrapes the "Season Stats" table from the League Standings page. It then compares a team's stats for the
     whole season against the stats for every other team and computes the score. The result of all these comparsions are
