@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tools</title>
+</head>
+<body>
+<h1>Tools</h1>
+<a href = '{{ url_for('index', leagueId=leagueId, seasonId=seasonId) }}'>Main Page</a> |
+<a href = '{{ url_for('tools', leagueId=leagueId, seasonId=seasonId) }}'>Tools Page</a>
+<br /><br />
+<strong><u>Weekly Data Tools</u></strong> <br />
+These tools analyze weekly data.
+<ul>
+    <li><a href = '{{ url_for('app2_object.weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Matchups</a><br /></li>
+</ul>
+<br /><br />
+<strong><u>Season Data Tools</u></strong> <br />
+These tools analyze data from the whole season.<br />
+<ul>
+    <li><a href = '{{ url_for('season_rankings', leagueId=leagueId, seasonId=seasonId) }}'>Season Rankings</a><br /></li>
+    <li><a href = '{{ url_for('season_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Season Matchups</a><br /></li>
+    <li><a href = '{{ url_for('season_analysis', leagueId=leagueId, seasonId=seasonId) }}'>Season Further Analysis</a></li>
+</ul>
+</body>
+</html>

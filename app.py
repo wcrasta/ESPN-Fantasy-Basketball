@@ -2,54 +2,28 @@ from bs4 import BeautifulSoup
 import requests
 from operator import itemgetter
 from flask import Flask, render_template, request, redirect, url_for
+from app2 import app2_object
 from urllib.parse import parse_qs, urlparse
 
 app = Flask(__name__)
-
+app.register_blueprint(app2_object)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     invalidURL = request.args.get('invalidURL') or False
     return render_template('index.html', invalidURL=invalidURL)
 
-
-@app.route('/matchups')
-def matchups():
-    leagueId = request.args.get('leagueId')
-    seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-    try:
-        teams, categories = setup(url)
-    except:
-        redirect(url_for('index', invalidURL=True))
-    matchups, rankings, analysis = computeStats(teams, categories)
-    return render_template('matchups.html', matchups=matchups, leagueId=leagueId, seasonId=seasonId)
-
-
-@app.route('/analysis')
-def analysis():
-    leagueId = request.args.get('leagueId')
-    seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-    try:
-        teams, categories = setup(url)
-    except:
-        return redirect(url_for('index', invalidURL=True))
-    matchups, rankings, analysis = computeStats(teams, categories)
-    return render_template('analysis.html', analysis=analysis, matchups=matchups)
-
-
-@app.route('/rankings', methods=['GET', 'POST'])
-def rankings():
+@app.route('/tools', methods=['GET', 'POST'])
+def tools():
     if request.method == 'POST':
         url = request.form['url']
         query = parse_qs(urlparse(url).query, keep_blank_values=True)
         try:
             leagueId = str(query['leagueId'][0])
             seasonId = str(query['seasonId'][0])
-            return redirect(url_for('rankings', leagueId=leagueId, seasonId=seasonId))
+            return redirect(url_for('tools', leagueId=leagueId, seasonId=seasonId))
         except:
-            redirect(url_for('index',invalidURL=True))
+            return redirect(url_for('index',invalidURL=True))
     else:
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
@@ -58,8 +32,44 @@ def rankings():
         teams, categories = setup(url)
     except:
         return redirect(url_for('index', invalidURL=True))
-    matchups, rankings, analysis = computeStats(teams, categories)
-    return render_template('results.html', rankings=rankings, leagueId=leagueId, seasonId=seasonId)
+    season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
+    return render_template('tools.html', season_rankings=season_rankings, season_matchups=season_matchups, season_analysis=season_analysis, leagueId=leagueId, seasonId=seasonId)
+
+@app.route('/season_rankings')
+def season_rankings():
+    leagueId = request.args.get('leagueId')
+    seasonId = request.args.get('seasonId')
+    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    try:
+        teams, categories = setup(url)
+    except:
+        return redirect(url_for('index', invalidURL=True))
+    season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
+    return render_template('season_rankings.html', season_rankings=season_rankings, leagueId=leagueId, seasonId=seasonId)
+
+@app.route('/season_matchups')
+def season_matchups():
+    leagueId = request.args.get('leagueId')
+    seasonId = request.args.get('seasonId')
+    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    try:
+        teams, categories = setup(url)
+    except:
+        return redirect(url_for('index', invalidURL=True))
+    season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
+    return render_template('season_matchups.html', season_matchups=season_matchups, leagueId=leagueId, seasonId=seasonId)
+
+@app.route('/season_analysis')
+def season_analysis():
+    leagueId = request.args.get('leagueId')
+    seasonId = request.args.get('seasonId')
+    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    try:
+        teams, categories = setup(url)
+    except:
+        return redirect(url_for('index', invalidURL=True))
+    season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
+    return render_template('season_analysis.html', season_matchups=season_matchups, season_analysis=season_analysis, leagueId=leagueId, seasonId=seasonId)
 
 # Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
@@ -82,7 +92,6 @@ def setup(url):
         # Add each team to a teams matrix.
         teams.append(team_row)
     return teams, categories
-
 
 # Computes the power rankings and matchup predictions, and stores the
 # values in a tuple.
@@ -134,8 +143,7 @@ def computeStats(teams, categories):
         rankingsList.append(str(counter) + '. ' + ', '.join(v))
         counter += 1
 
-    return matchupsList, rankingsList, analysisList
-
+    return rankingsList, matchupsList, analysisList
 
 # Calculates the score for individual matchups.
 def calculateScore(teamA, teamB, categories):
@@ -181,7 +189,7 @@ def calculateScore(teamA, teamB, categories):
 
 # Run the Flask app.
 if __name__ == '__main__':
-   app.run()
+    app.run(debug=True)
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
 # teams, categories = setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
