@@ -10,7 +10,7 @@
 <a href = '{{ url_for('tools', leagueId=leagueId, seasonId=seasonId) }}'>Tools Page</a>
 <br /><br />
 <strong><u>Weekly Data Tools</u></strong> <br />
-These tools analyze weekly data.
+These tools analyze weekly data. <font color="red">These tools only work for leagues with H2H Category scoring systems.</font>
 <ul>
     <li><a href = '{{ url_for('app2_object.weekly_rankings', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Rankings</a><br /></li>
     <li><a href = '{{ url_for('app2_object.weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Matchups</a><br /></li>
