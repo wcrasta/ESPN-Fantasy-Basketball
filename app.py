@@ -189,7 +189,7 @@ def calculateScore(teamA, teamB, categories):
 
 # Run the Flask app.
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
 # teams, categories = setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')

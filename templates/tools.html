@@ -12,8 +12,9 @@
 <strong><u>Weekly Data Tools</u></strong> <br />
 These tools analyze weekly data.
 <ul>
-    <li>More coming soon!</li>
+    <li><a href = '{{ url_for('app2_object.weekly_rankings', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Rankings</a><br /></li>
     <li><a href = '{{ url_for('app2_object.weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Matchups</a><br /></li>
+    <li><a href = '{{ url_for('app2_object.weekly_analysis', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Analysis</a><br /></li>
 </ul>
 <br />
 <strong><u>Season Data Tools</u></strong> <br />
