@@ -16,7 +16,7 @@
 {% endfor %}
 
 <br>
-<a href = '{{ url_for('app2_object.weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>See Weekly Matchups</a>
+<a href = '{{ url_for('weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>See Weekly Matchups</a>
 <h2>How It Works</h2>
 <p> The code scrapes the scoreboard table from the League Scoreboard page. It then compares a team's stats for the
     whole week against the stats for every other team and computes the score. The result of all these comparsions are

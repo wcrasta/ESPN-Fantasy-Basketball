@@ -10,15 +10,15 @@
 <a href = '{{ url_for('tools', leagueId=leagueId, seasonId=seasonId) }}'>Tools Page</a>
 <br /><br />
 <strong><u>Weekly Data Tools</u></strong> <br />
-These tools analyze weekly data. <font color="red">These tools only work for leagues with H2H Category scoring systems.</font>
+These tools analyze weekly data.
 <ul>
-    <li><a href = '{{ url_for('app2_object.weekly_rankings', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Rankings</a><br /></li>
-    <li><a href = '{{ url_for('app2_object.weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Matchups</a><br /></li>
-    <li><a href = '{{ url_for('app2_object.weekly_analysis', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Analysis</a><br /></li>
+    <li><a href = '{{ url_for('weekly_rankings', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Rankings</a><br /></li>
+    <li><a href = '{{ url_for('weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Matchups</a><br /></li>
+    <li><a href = '{{ url_for('weekly_analysis', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Further Analysis</a><br /></li>
 </ul>
 <br />
 <strong><u>Season Data Tools</u></strong> <br />
-These tools analyze data from the whole season.<br />
+These tools analyze data from the whole season.
 <ul>
     <li><a href = '{{ url_for('season_rankings', leagueId=leagueId, seasonId=seasonId) }}'>Season Rankings</a><br /></li>
     <li><a href = '{{ url_for('season_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Season Matchups</a><br /></li>

@@ -11,7 +11,7 @@
 <br />
 <p>This page shows: taking the current week's data into account, how many categories would you win against each of your
 opponents?</p>
-<a href = '{{ url_for('app2_object.weekly_analysis', leagueId=leagueId, seasonId=seasonId) }}'>See Weekly Further Analysis</a><br/><br/>
+<a href = '{{ url_for('weekly_analysis', leagueId=leagueId, seasonId=seasonId) }}'>See Weekly Further Analysis</a><br/><br/>
 {% for item in weekly_matchups %}
     {% if item == ('*' * 100) %}
         {{ item }} <br />
