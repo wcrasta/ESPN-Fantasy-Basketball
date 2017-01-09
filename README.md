@@ -10,10 +10,10 @@ To develop, you need Python & Flask. For a list of Python dependencies, see `req
 
 ## Improvements/Possible Added Features
 
-Feel free to contribute to this project! There are many improvements that can be made, both in terms of code quality and in terms of whole new ideas that can be implemented. Both the front-end and back-end are very very simple and can be greatly enhanced. Thoughts I have for new features (may or may not ever be implemented):
+Feel free to contribute to this project! There are many improvements that can be made, both in terms of code quality and in terms of whole new ideas that can be implemented. Both the front-end and back-end are simple and can be greatly enhanced. Thoughts I have for new features (may or may not ever be implemented):
 
 1. Come up with a formula that lists teams on the Standings page based on the difficulty of their schedule. For example, a win against the #1 team in the league might raise your "Standings" score by 5 whereas a win against the worst team in the league might raise your score by 1. The current implementation is to raise everyone's score by 1 when they win, regardless of the strength of opponent.
-2. Use Selenium to make this tool available for private leagues.
+2. Use Selenium or the ESPN API (?) to make this tool available for private leagues.
 
 ## Instructions for contributing
 
