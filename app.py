@@ -282,9 +282,9 @@ def calculateScore(teamA, teamB, categories):
     return valuesTuple
 
 # Run the Flask app.
-# if __name__ == '__main__':
-#     app.run()
+if __name__ == '__main__':
+     app.run()
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
-teams, categories, seasonData = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=224165&seasonId=2019')
-rankingsList, matchupsList, analysisList = computeStats(teams, categories, seasonData)
+# teams, categories, seasonData = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=224165&seasonId=2019')
+# rankingsList, matchupsList, analysisList = computeStats(teams, categories, seasonData)
