@@ -1,7 +1,11 @@
 from bs4 import BeautifulSoup
-import requests
-from operator import itemgetter
 from flask import Flask, render_template, request, redirect, url_for
+from operator import itemgetter
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
 from urllib.parse import parse_qs, urlparse
 
 # Create the Flask application.
@@ -27,18 +31,14 @@ def tools():
     else:
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
-        url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-    try:
-        setup(url)
-    except:
-        return redirect(url_for('index', invalidURL=True))
+        url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     return render_template('tools.html', leagueId=leagueId, seasonId=seasonId)
 
 @app.route('/season_rankings')
 def season_rankings():
     leagueId = request.args.get('leagueId')
     seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
     except:
@@ -50,7 +50,7 @@ def season_rankings():
 def season_matchups():
     leagueId = request.args.get('leagueId')
     seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
     except:
@@ -62,7 +62,7 @@ def season_matchups():
 def season_analysis():
     leagueId = request.args.get('leagueId')
     seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
     except:
@@ -75,7 +75,7 @@ def season_analysis():
 def weekly_rankings():
     leagueId = request.args.get('leagueId')
     seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
     except:
@@ -87,7 +87,7 @@ def weekly_rankings():
 def weekly_matchups():
     leagueId = request.args.get('leagueId')
     seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
     except:
@@ -99,7 +99,7 @@ def weekly_matchups():
 def weekly_analysis():
     leagueId = request.args.get('leagueId')
     seasonId = request.args.get('seasonId')
-    url = 'http://games.espn.com/fba/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
+    url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
     except:
@@ -110,26 +110,42 @@ def weekly_analysis():
 
 # Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
-    source_code = requests.get(url)
-    plain_text = source_code.text
+    options = webdriver.ChromeOptions()
+    options.add_argument('headless')
+    capa = DesiredCapabilities.CHROME
+    capa["pageLoadStrategy"] = "none"
+    driver = webdriver.Chrome(chrome_options=options, desired_capabilities=capa)
+    driver.set_window_size(1440, 900)
+    driver.get(url)
+
+    # Season standings have a different URL than weekly scoreboard
+    seasonData = url.startswith('http://fantasy.espn.com/basketball/league/standings')
+    if seasonData:
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
+    else:
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
+
+    plain_text = driver.page_source
     soup = BeautifulSoup(plain_text, 'lxml')
     teams = []
-    # Season standings have a different URL than weekly scoreboard
-    seasonData = url.startswith('http://games.espn.com/fba/standings')
     # Scrape table depending on whether it's season or weekly data.
     if seasonData:
-        seasonStats = soup.find('table', {'id': 'statsTable'})
-        categories = [link.string for link in seasonStats.findAll('tr')[2].findAll('a')]
-        rows = seasonStats.findAll('tr')[3:]
+        table = soup.find_all('thead', class_='Table2__sub-header Table2__thead')[1]
+        tableSubHead = table.find('tr', class_='Table2__header-row Table2__tr Table2__even')
+        listCats = tableSubHead.find_all('th')
+        categories = []
+        for cat in listCats:
+            categories.append(cat.string)
+        tableBody = soup.find_all('tbody', class_='Table2__tbody')[3]
+        rows = tableBody.findAll('tr', {'class': 'Table2__tr Table2__tr--md Table2__even'})
     else:
-        tableSubHead = soup.find_all('tr', class_='tableSubHead')
+        tableSubHead = soup.find_all('tr', class_='Table2__header-row Table2__tr Table2__even')
         tableSubHead = tableSubHead[0]
         listCats = tableSubHead.find_all('th')
         categories = []
         for cat in listCats:
-            if 'title' in cat.attrs:
-                categories.append(cat.string)
-        rows = soup.findAll('tr', {'class': 'linescoreTeamRow'})
+            categories.append(cat.string)
+        rows = soup.findAll('tr', {'class': 'Table2__tr Table2__tr--sm Table2__even'})
 
     # Creates a 2-D matrix which resembles the Season Stats table.
     for row in range(len(rows)):
@@ -143,52 +159,51 @@ def setup(url):
             team_row.append(column.getText())
         # Add each team to a teams matrix.
         teams.append(team_row)
-    return teams, categories, seasonData
+    if seasonData:
+        tableBody = soup.find_all('tbody', class_='Table2__tbody')[2]
+        teamNamesList = tableBody.find_all('span', class_='teamName truncate')
+    else:
+        teamNamesList = soup.find_all('div', {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
+
+    teamNames = []
+
+    for teamName in teamNamesList:
+        teamNames.append(teamName.string)
+
+    namedTeams = []
+    count = 0
+    for team in teams:
+        team.insert(0, teamNames[count])
+        namedTeams.append(team)
+        count += 1
+    return namedTeams, categories, seasonData
 
 # Computes the standings and matchups.
 def computeStats(teams, categories, seasonData):
     # Initialize the dictionary which will hold information about each team along with their "standings score".
     teamDict = {}
     for team in teams:
-        if seasonData:
-            teamDict[team[1]] = 0
-        else:
-            teamDict[team[0]] = 0
+        teamDict[team[0]] = 0
 
     matchupsList = []
     analysisList = []
     for team1 in teams:
         for team2 in teams:
-            if seasonData:
-                score, wonList, lossList, tiesList = calculateScore(team1[3:], team2[3:], categories)
-            else:
-                score, wonList, lossList, tiesList = calculateScore(team1[2:], team2[2:], categories)
+            score, wonList, lossList, tiesList = calculateScore(team1[1:], team2[1:], categories)
             if team1 != team2:
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
                 if score[0] > score[1]:
-                    if seasonData:
-                        teamDict[team1[1]] += 1
-                    else:
-                        teamDict[team1[0]] += 1
+                    teamDict[team1[0]] += 1
                 elif score[0] < score[1]:
-                    if seasonData:
-                        teamDict[team1[1]] -= 1
-                    else:
-                        teamDict[team1[0]] -= 1
+                    teamDict[team1[0]] -= 1
                 # map(str, score) is for formatting the score tuple into a string.
-                if seasonData:
-                    matchupsList.append(
-                        team1[1] + ' vs. ' + team2[1] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
-                    analysisList.append(team1[1] + ' vs. ' + team2[1] + ' -- ' + team1[1] + ' won ' + ', '.join(wonList) + '. '
-                    + team1[1] + ' lost ' + ', '.join(lossList) + '. ' + team1[1] +' tied ' + ', '.join(tiesList) + '.')
-                else:
-                    matchupsList.append(
-                        team1[0] + ' vs. ' + team2[0] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
-                    analysisList.append(
-                        team1[0] + ' vs. ' + team2[0] + ' -- ' + team1[0] + ' won ' + ', '.join(wonList) + '. '
-                        + team1[0] + ' lost ' + ', '.join(lossList) + '. ' + team1[0] + ' tied ' + ', '.join(
-                            tiesList) + '.')
+                matchupsList.append(
+                    team1[0] + ' vs. ' + team2[0] + ' || SCORE (W-L-T): ' + '-'.join(map(str, score)))
+                analysisList.append(
+                    team1[0] + ' vs. ' + team2[0] + ' -- ' + team1[0] + ' won ' + ', '.join(wonList) + '. '
+                    + team1[0] + ' lost ' + ', '.join(lossList) + '. ' + team1[0] + ' tied ' + ', '.join(
+                        tiesList) + '.')
         matchupsList.append('*' * 100)
         analysisList.append('*' * 100)
 
@@ -264,5 +279,5 @@ if __name__ == '__main__':
     app.run()
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
-# teams, categories, seasonData = setup('http://games.espn.com/fba/standings?leagueId=224165&seasonId=2017')
+# teams, categories, seasonData = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=633975&seasonId=2019')
 # rankingsList, matchupsList, analysisList = computeStats(teams, categories, seasonData)

@@ -7,12 +7,10 @@
 <body>
 
 <p>
-<span style="background-color: #FFFF00">As of the 2018-2019 Fantasy Basketball season, this website no longer works.
-    This is due to ESPN completely changing the layout of their fantasy website.</span>
-I'll spend some time trying to fix the application, but might decide not to fix it it all.
-You can track the status of this website by going to the GitHub repo below and looking at the issues. Feel free to leave
-me your feedback on if this site was helpful in the past, I love reading those! My e-mail address is
-<a href="mailto:warrencrasta@gmail.com">warrencrasta@gmail.com</a>.
+    During the 2018-2019 fantasy season, ESPN redesigned its website. As a result, I've had to change the code for this
+    application. I made these changes very quickly and so the application is not very fast, but should still work. I might write a faster/better
+    program if I get the chance, but feel free to help out by cleaning things up on the GitHub repo. Also, would love to
+    get your feedback on if this application helped you. My e-mail address is <a href="mailto:warrencrasta@gmail.com">warrencrasta@gmail.com</a>.
 </p>
 
 <p>An application that calculates and displays various statistics for ESPN Fantasy Basketball leagues. The
@@ -22,7 +20,7 @@ me your feedback on if this site was helpful in the past, I love reading those! 
 </p>
 
 <form method= 'POST' action='/tools'>
-    <strong>Enter URL of league office page (ex: http://games.espn.com/fba/leagueoffice?leagueId=224165&seasonId=2017):</strong><br>
+    <strong>Enter URL of league office page (ex: http://fantasy.espn.com/basketball/league?leagueId=633975&seasonId=2019):</strong><br>
     {% if invalidURL %}
             <font color="red">Either URL is incorrect or league is private.</font></br>
     {% endif %}
