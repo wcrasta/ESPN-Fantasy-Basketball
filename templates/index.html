@@ -6,23 +6,19 @@
 </head>
 <body>
 
-<p>
-    During the 2018-2019 fantasy season, ESPN redesigned its website. As a result, I've had to change the code for this
-    application. I made these changes very quickly and so the application is not very fast, but should still work. I might write a faster/better
-    program if I get the chance, but feel free to help out by cleaning things up on the GitHub repo. Also, would love to
-    get your feedback on if this application helped you. My e-mail address is <a href="mailto:warrencrasta@gmail.com">warrencrasta@gmail.com</a>.
-</p>
-
 <p>An application that calculates and displays various statistics for ESPN Fantasy Basketball leagues. The
     code/application works for (public) leagues of any size that use H2H Most Cat. scoring.
     For more information and to see the source code of the project, checkout
     the <a href="https://github.com/wcrasta/ESPN-Fantasy-Basketball" target="_blank">GitHub repository</a>.
+    <br/><br/>
+    If something is broken or you have feedback to share, please e-mail me at
+    <a href="mailto:warrencrasta@gmail.com">warrencrasta@gmail.com</a>. I love hearing positive feedback!
 </p>
 
 <form method= 'POST' action='/tools'>
-    <strong>Enter URL of league office page (ex: http://fantasy.espn.com/basketball/league?leagueId=633975&seasonId=2019):</strong><br>
+    <strong>Enter URL of league office page (ex: http://fantasy.espn.com/basketball/league?leagueId=224165&seasonId=2019):</strong><br>
     {% if invalidURL %}
-            <font color="red">Either URL is incorrect or league is private.</font></br>
+            <font color="red">Either URL is incorrect, league is private, or there's some other error.</font></br>
     {% endif %}
   <input type='text' name='url'>
   <br><br>

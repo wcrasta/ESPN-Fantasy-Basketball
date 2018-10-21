@@ -10,7 +10,7 @@ from urllib.parse import parse_qs, urlparse
 
 # Create the Flask application.
 app = Flask(__name__)
-# app.debug = True
+app.debug = True
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -26,12 +26,12 @@ def tools():
             leagueId = str(query['leagueId'][0])
             seasonId = str(query['seasonId'][0])
             return redirect(url_for('tools', leagueId=leagueId, seasonId=seasonId))
-        except:
+        except Exception as ex:
+            print(ex)
             return redirect(url_for('index',invalidURL=True))
     else:
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
-        url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     return render_template('tools.html', leagueId=leagueId, seasonId=seasonId)
 
 @app.route('/season_rankings')
@@ -41,7 +41,8 @@ def season_rankings():
     url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
-    except:
+    except Exception as ex:
+        print(ex)
         return redirect(url_for('index', invalidURL=True))
     season_rankings, season_matchups, season_analysis = computeStats(teams, categories, seasonData)
     return render_template('season_rankings.html', season_rankings=season_rankings, leagueId=leagueId, seasonId=seasonId)
@@ -53,7 +54,8 @@ def season_matchups():
     url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
-    except:
+    except Exception as ex:
+        print(ex)
         return redirect(url_for('index', invalidURL=True))
     season_rankings, season_matchups, season_analysis = computeStats(teams, categories, seasonData)
     return render_template('season_matchups.html', season_matchups=season_matchups, leagueId=leagueId, seasonId=seasonId)
@@ -65,7 +67,8 @@ def season_analysis():
     url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
-    except:
+    except Exception as ex:
+        print(ex)
         return redirect(url_for('index', invalidURL=True))
     season_rankings, season_matchups, season_analysis = computeStats(teams, categories, seasonData)
     return render_template('season_analysis.html', season_matchups=season_matchups, season_analysis=season_analysis,
@@ -78,7 +81,8 @@ def weekly_rankings():
     url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
-    except:
+    except Exception as ex:
+        print(ex)
         return redirect(url_for('index', invalidURL=True))
     weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories, seasonData)
     return render_template('weekly_rankings.html', weekly_rankings=weekly_rankings, leagueId=leagueId, seasonId=seasonId)
@@ -90,7 +94,8 @@ def weekly_matchups():
     url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
-    except:
+    except Exception as ex:
+        print(ex)
         return redirect(url_for('index', invalidURL=True))
     weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories, seasonData)
     return render_template('weekly_matchups.html', weekly_matchups=weekly_matchups, leagueId=leagueId, seasonId=seasonId)
@@ -102,7 +107,8 @@ def weekly_analysis():
     url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
         teams, categories, seasonData = setup(url)
-    except:
+    except Exception as ex:
+        print(ex)
         return redirect(url_for('index', invalidURL=True))
     weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories, seasonData)
     return render_template('weekly_analysis.html', weekly_matchups=weekly_matchups, weekly_analysis=weekly_analysis,
@@ -126,6 +132,7 @@ def setup(url):
         WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
 
     plain_text = driver.page_source
+    driver.close()
     soup = BeautifulSoup(plain_text, 'lxml')
     teams = []
     # Scrape table depending on whether it's season or weekly data.
@@ -136,7 +143,7 @@ def setup(url):
         categories = []
         for cat in listCats:
             categories.append(cat.string)
-        tableBody = soup.find_all('tbody', class_='Table2__tbody')[3]
+        tableBody = soup.find_all('table', class_='Table2__table-scroller Table2__right-aligned Table2__table')[0]
         rows = tableBody.findAll('tr', {'class': 'Table2__tr Table2__tr--md Table2__even'})
     else:
         tableSubHead = soup.find_all('tr', class_='Table2__header-row Table2__tr Table2__even')
@@ -160,7 +167,7 @@ def setup(url):
         # Add each team to a teams matrix.
         teams.append(team_row)
     if seasonData:
-        tableBody = soup.find_all('tbody', class_='Table2__tbody')[2]
+        tableBody = soup.find_all('section', class_='Table2__responsiveTable Table2__table-outer-wrap Table2--hasFixed-left Table2--hasFixed-right')[0]
         teamNamesList = tableBody.find_all('span', class_='teamName truncate')
     else:
         teamNamesList = soup.find_all('div', {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
@@ -275,9 +282,9 @@ def calculateScore(teamA, teamB, categories):
     return valuesTuple
 
 # Run the Flask app.
-if __name__ == '__main__':
-    app.run()
+# if __name__ == '__main__':
+#     app.run()
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
-# teams, categories, seasonData = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=633975&seasonId=2019')
-# rankingsList, matchupsList, analysisList = computeStats(teams, categories, seasonData)
+teams, categories, seasonData = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=224165&seasonId=2019')
+rankingsList, matchupsList, analysisList = computeStats(teams, categories, seasonData)
