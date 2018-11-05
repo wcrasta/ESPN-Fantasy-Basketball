@@ -43,11 +43,11 @@ def season_rankings():
     seasonId = request.args.get('seasonId')
     url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
-        teams, categories, seasonData = setup(url)
+        teams, categories = setup(url)
     except Exception as ex:
         print(ex)
         return redirect(url_for('index', invalidURL=True))
-    season_rankings, season_matchups, season_analysis = computeStats(teams, categories, seasonData)
+    season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
     return render_template('season_rankings.html', season_rankings=season_rankings, leagueId=leagueId, seasonId=seasonId)
 
 
@@ -57,11 +57,11 @@ def season_matchups():
     seasonId = request.args.get('seasonId')
     url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
-        teams, categories, seasonData = setup(url)
+        teams, categories = setup(url)
     except Exception as ex:
         print(ex)
         return redirect(url_for('index', invalidURL=True))
-    season_rankings, season_matchups, season_analysis = computeStats(teams, categories, seasonData)
+    season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
     return render_template('season_matchups.html', season_matchups=season_matchups, leagueId=leagueId, seasonId=seasonId)
 
 
@@ -71,11 +71,11 @@ def season_analysis():
     seasonId = request.args.get('seasonId')
     url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
-        teams, categories, seasonData = setup(url)
+        teams, categories = setup(url)
     except Exception as ex:
         print(ex)
         return redirect(url_for('index', invalidURL=True))
-    season_rankings, season_matchups, season_analysis = computeStats(teams, categories, seasonData)
+    season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
     return render_template('season_analysis.html', season_matchups=season_matchups, season_analysis=season_analysis,
                            leagueId=leagueId, seasonId=seasonId)
 
@@ -86,11 +86,11 @@ def weekly_rankings():
     seasonId = request.args.get('seasonId')
     url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
-        teams, categories, seasonData = setup(url)
+        teams, categories = setup(url)
     except Exception as ex:
         print(ex)
         return redirect(url_for('index', invalidURL=True))
-    weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories, seasonData)
+    weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
     return render_template('weekly_rankings.html', weekly_rankings=weekly_rankings, leagueId=leagueId, seasonId=seasonId)
 
 
@@ -100,11 +100,11 @@ def weekly_matchups():
     seasonId = request.args.get('seasonId')
     url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
-        teams, categories, seasonData = setup(url)
+        teams, categories = setup(url)
     except Exception as ex:
         print(ex)
         return redirect(url_for('index', invalidURL=True))
-    weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories, seasonData)
+    weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
     return render_template('weekly_matchups.html', weekly_matchups=weekly_matchups, leagueId=leagueId, seasonId=seasonId)
 
 
@@ -114,11 +114,11 @@ def weekly_analysis():
     seasonId = request.args.get('seasonId')
     url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
     try:
-        teams, categories, seasonData = setup(url)
+        teams, categories = setup(url)
     except Exception as ex:
         print(ex)
         return redirect(url_for('index', invalidURL=True))
-    weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories, seasonData)
+    weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
     return render_template('weekly_analysis.html', weekly_matchups=weekly_matchups, weekly_analysis=weekly_analysis,
                            leagueId=leagueId, seasonId=seasonId)
 
@@ -192,7 +192,7 @@ def setup(url):
         team.insert(0, teamNames[count])
         namedTeams.append(team)
         count += 1
-    return namedTeams, categories, seasonData
+    return namedTeams, categories
 
 
 # Computes the standings and matchups.
@@ -298,5 +298,5 @@ if __name__ == '__main__':
     app.run()
 
 # Comment out the if statement above and uncomment the line below to debug Python code.
-# teams, categories, seasonData = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=224165&seasonId=2019')
-# rankingsList, matchupsList, analysisList = computeStats(teams, categories, seasonData)
+# teams, categories = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=224165&seasonId=2019')
+# rankingsList, matchupsList, analysisList = computeStats(teams, categories)
