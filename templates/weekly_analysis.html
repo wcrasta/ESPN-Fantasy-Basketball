@@ -20,11 +20,11 @@ opponent this week, you would win PTS by a margin of +100.</p>
         {% set w = (results.split('-')[0]|int) %}
         {% set l = (results.split('-')[1]|int) %}
         {% if w > l %}
-            <font color='green'>{{ item }}</font>
+            <span style='color:green'>{{ item }}</span>
         {% elif w == l %}
             {{ item }}
         {% else %}
-            <font color='red'>{{ item }}</font>
+            <span style='color:red'>{{ item }}</span>
         {% endif %}
         <br/>
     {% endif %}

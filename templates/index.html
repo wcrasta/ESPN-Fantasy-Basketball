@@ -18,7 +18,7 @@
 <form method= 'POST' action='/tools'>
     <strong>Enter URL of league office page (ex: http://fantasy.espn.com/basketball/league?leagueId=224165&seasonId=2019):</strong><br>
     {% if invalidURL %}
-            <font color="red">Either URL is incorrect, league is private, or there's some other error.</font></br>
+            <span style='color:red'> color="red">Either URL is incorrect, league is private, or there's some other error.</span><br/>
     {% endif %}
   <input type='text' name='url'>
   <br><br>
