@@ -16,7 +16,8 @@
 </p>
 
 <form method= 'POST' action='/tools'>
-    <strong>Enter URL of league office page (ex: http://fantasy.espn.com/basketball/league?leagueId=224165&seasonId=2019):</strong><br>
+    <strong>Enter URL of league office page (ex: http://fantasy.espn.com/basketball/league?leagueId=224165&seasonId=2019):</strong><br/>
+    You may have to add <span style='color:red'><strong>&seasonId=2019</strong></span> to your link, as shown above.<br/><br/>
     {% if invalidURL %}
             <span style='color:red'>Either URL is incorrect, league is private, or there's some other error.</span><br/>
     {% endif %}
