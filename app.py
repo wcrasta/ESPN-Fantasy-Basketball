@@ -169,7 +169,8 @@ def setup(url):
             listCats = tableSubHead.find_all('th')
             categories = []
             for cat in listCats:
-                categories.append(cat.string)
+                if cat.string is not None:
+                    categories.append(cat.string)
             rows = soup.findAll('tr', {'class': 'Table2__tr Table2__tr--sm Table2__even'})
 
         # Creates a 2-D matrix which resembles the Season Stats table.
@@ -179,7 +180,7 @@ def setup(url):
             if seasonData:
                 columns = rows[row].findAll('td')[:(3 + len(categories))]
             else:
-                columns = rows[row].findAll('td')[:(2 + len(categories))]
+                columns = rows[row].findAll('td')[1:(2 + len(categories))]
             for column in columns:
                 team_row.append(column.getText())
             # Add each team to a teams matrix.

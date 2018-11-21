@@ -12,12 +12,12 @@
 <p>The values listed are aggregate, or year-to-date values. They are NOT weekly matchup values. In other words, a
 PTS margin of +1000 does not mean that, on any given week, you will score 1000 more points than your opponent. It means
 that in the course of the whole season, your team has scored 1000 more points than your opponent's team. </p>
-{% set count = 0 %}
+{% set ns = namespace(count=0) %}
 {% for item in season_analysis %}
     {% if item == ('*' * 100) %}
         {{ item }} <br />
     {% else %}
-        {% set results = season_matchups[count].split()[-1] %}
+        {% set results = season_matchups[ns.count].split()[-1] %}
         {% set w = (results.split('-')[0]|int) %}
         {% set l = (results.split('-')[1]|int) %}
         {% if w > l %}
@@ -29,7 +29,7 @@ that in the course of the whole season, your team has scored 1000 more points th
         {% endif %}
         <br/>
     {% endif %}
-    {% set count = count + 1 %}
+    {% set ns.count = ns.count + 1 %}
 {% endfor %}
 </body>
 </html>

@@ -11,12 +11,12 @@
 <br />
 <p>The values listed are weekly values. For example, a PTS margin of +100 against an opponent means that if you had played that
 opponent this week, you would win PTS by a margin of +100.</p>
-{% set count = 0 %}
+{% set ns = namespace(count=0) %}
 {% for item in weekly_analysis %}
     {% if item == ('*' * 100) %}
         {{ item }} <br />
     {% else %}
-        {% set results = weekly_matchups[count].split()[-1] %}
+        {% set results = weekly_matchups[ns.count].split()[-1] %}
         {% set w = (results.split('-')[0]|int) %}
         {% set l = (results.split('-')[1]|int) %}
         {% if w > l %}
@@ -28,7 +28,7 @@ opponent this week, you would win PTS by a margin of +100.</p>
         {% endif %}
         <br/>
     {% endif %}
-    {% set count = count + 1 %}
+    {% set ns.count = ns.count + 1 %}
 {% endfor %}
 </body>
 </html>
