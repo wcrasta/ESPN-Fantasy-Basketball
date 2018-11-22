@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from operator import itemgetter
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -7,11 +7,12 @@ from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 from urllib.parse import parse_qs, urlparse
-
+import requests
 
 # Create the Flask application.
 app = Flask(__name__)
 app.debug = True
+app.secret_key = "super secret key"
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -48,7 +49,7 @@ def season_rankings():
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
         url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-        teams, categories = setup(url)
+        teams, categories, weeks = setup(url)
         season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
         return render_template('season_rankings.html', season_rankings=season_rankings, leagueId=leagueId,
                                seasonId=seasonId)
@@ -63,7 +64,7 @@ def season_matchups():
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
         url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-        teams, categories = setup(url)
+        teams, categories, weeks = setup(url)
         season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
         return render_template('season_matchups.html', season_matchups=season_matchups, leagueId=leagueId,
                                seasonId=seasonId)
@@ -78,7 +79,7 @@ def season_analysis():
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
         url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-        teams, categories = setup(url)
+        teams, categories, weeks = setup(url)
         season_rankings, season_matchups, season_analysis = computeStats(teams, categories)
         return render_template('season_analysis.html', season_matchups=season_matchups, season_analysis=season_analysis,
                                leagueId=leagueId, seasonId=seasonId)
@@ -87,50 +88,74 @@ def season_analysis():
         return redirect(url_for('index', invalidURL=True))
 
 
-@app.route('/weekly_rankings')
+@app.route('/weekly_rankings', methods=['GET', 'POST'])
 def weekly_rankings():
     try:
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
-        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-        teams, categories = setup(url)
+        week = request.form.get('week_selection')
+        if week is None:
+            week = getCurrentWeek(leagueId, seasonId)
+        session['currentWeek'] = week
+        url = ('http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}&matchupPeriodId={}')\
+            .format(leagueId, seasonId, week)
+        teams, categories, weeks = setup(url)
         weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
         return render_template('weekly_rankings.html', weekly_rankings=weekly_rankings, leagueId=leagueId,
-                               seasonId=seasonId)
+                               seasonId=seasonId, currentWeek=week, weeks=weeks)
     except Exception as ex:
         print('Exception in weekly rankings:' + ex)
         return redirect(url_for('index', invalidURL=True))
 
-
-@app.route('/weekly_matchups')
+@app.route('/weekly_matchups', methods=['GET', 'POST'])
 def weekly_matchups():
     try:
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
-        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-        teams, categories = setup(url)
+        week = request.form.get('week_selection')
+        if week is None:
+            week = session.get('currentWeek', None)
+            if week is None:
+                week = getCurrentWeek(leagueId, seasonId)
+        session['currentWeek'] = week
+        url = ('http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}&matchupPeriodId={}') \
+            .format(leagueId, seasonId, week)
+        teams, categories, weeks  = setup(url)
         weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
         return render_template('weekly_matchups.html', weekly_matchups=weekly_matchups, leagueId=leagueId,
-                               seasonId=seasonId)
+                               seasonId=seasonId, currentWeek=week, weeks=weeks)
     except Exception as ex:
         print('Exception in weekly matchups:' + ex)
         return redirect(url_for('index', invalidURL=True))
 
 
-@app.route('/weekly_analysis')
+@app.route('/weekly_analysis', methods=['GET', 'POST'])
 def weekly_analysis():
     try:
         leagueId = request.args.get('leagueId')
         seasonId = request.args.get('seasonId')
-        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}'.format(leagueId, seasonId)
-        teams, categories = setup(url)
+        week = request.form.get('week_selection')
+        if week is None:
+            week = session.get('currentWeek', None)
+            if week is None:
+                week = getCurrentWeek(leagueId, seasonId)
+        session['currentWeek'] = week
+        url = ('http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}&matchupPeriodId={}') \
+            .format(leagueId, seasonId, week)
+        teams, categories, weeks = setup(url)
         weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
         return render_template('weekly_analysis.html', weekly_matchups=weekly_matchups, weekly_analysis=weekly_analysis,
-                               leagueId=leagueId, seasonId=seasonId)
+                               leagueId=leagueId, seasonId=seasonId, currentWeek=week, weeks=weeks)
     except Exception as ex:
         print('Exception in weekly analysis:' + ex)
         return redirect(url_for('index', invalidURL=True))
 
+def getCurrentWeek(leagueId, seasonId):
+    url = ("http://fantasy.espn.com/apis/v3/games/fba/seasons/{}/segments/0/leagues/{}?view=mMatchupScore&view"
+           "mScoreboard&view=mSettings&view=mTeam&view=modular&view=mNav").format(seasonId, leagueId)
+    r = requests.get(url)
+    data = r.json()
+    return data['status']['currentMatchupPeriod']
 
 # Scrapes the "Season Stats" table from the ESPN Fantasy Standings page.
 def setup(url):
@@ -149,6 +174,7 @@ def setup(url):
         else:
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
 
+        weeks = []
         plain_text = driver.page_source
         driver.close()
         soup = BeautifulSoup(plain_text, 'lxml')
@@ -164,6 +190,10 @@ def setup(url):
             tableBody = soup.find_all('table', class_='Table2__table-scroller Table2__right-aligned Table2__table')[0]
             rows = tableBody.findAll('tr', {'class': 'Table2__tr Table2__tr--md Table2__even'})
         else:
+            weeksDropdown = soup.find("select", class_='dropdown__select')
+            weeksValues = weeksDropdown.find_all("option")
+            weeks = [w.text for w in weeksValues]
+            values = [w.get("value") for w in weeksValues]
             tableSubHead = soup.find_all('tr', class_='Table2__header-row Table2__tr Table2__even')
             tableSubHead = tableSubHead[0]
             listCats = tableSubHead.find_all('th')
@@ -205,7 +235,7 @@ def setup(url):
     except Exception as ex:
         driver.close()
         print("Exception in setup" + ex)
-    return namedTeams, categories
+    return namedTeams, categories, weeks
 
 
 # Computes the standings and matchups.
@@ -310,7 +340,6 @@ def calculateScore(teamA, teamB, categories):
     except Exception as ex:
        print("Exception in calculateScore " + ex)
     return valuesTuple
-
 
 # Run the Flask app.
 if __name__ == '__main__':

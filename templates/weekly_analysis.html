@@ -9,6 +9,19 @@
 <a href = '{{ url_for('index', leagueId=leagueId, seasonId=seasonId) }}'>Main Page</a> |
 <a href = '{{ url_for('tools', leagueId=leagueId, seasonId=seasonId) }}'>Tools Page</a>
 <br />
+<p>
+    <form method="POST" action="{{ url_for('weekly_analysis', leagueId=leagueId, seasonId=seasonId) }}">
+        <label>Show the results for: </label>
+        <select name="week_selection" onchange="this.form.submit()">
+            {% for week in weeks %}
+                {% set weekNum = (week.split(' ')[1]) %}
+                <option {% if currentWeek|string == weekNum|string %} selected="selected"{% endif %} value="{{weekNum}}">
+                    {{ week }}
+                </option>
+            {% endfor %}
+        </select>
+    </form>
+</p>
 <p>The values listed are weekly values. For example, a PTS margin of +100 against an opponent means that if you had played that
 opponent this week, you would win PTS by a margin of +100.</p>
 {% set ns = namespace(count=0) %}
