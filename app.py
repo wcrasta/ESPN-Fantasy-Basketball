@@ -1,13 +1,14 @@
+from operator import itemgetter
+from urllib.parse import parse_qs, urlparse
+
+import requests
 from bs4 import BeautifulSoup
 from flask import Flask, render_template, request, redirect, url_for, session
-from operator import itemgetter
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
-from urllib.parse import parse_qs, urlparse
-import requests
 
 # Create the Flask application.
 app = Flask(__name__)
@@ -310,6 +311,10 @@ def calculateScore(teamA, teamB, categories):
                 break
 
         for i, (a, b) in enumerate(zip(teamA, teamB)):
+            if a == '--':
+                a = 0
+            if b == '--':
+                b = 0
             # Ignore empty values.
             if a != '' and b != '':
                 a = float(a)
