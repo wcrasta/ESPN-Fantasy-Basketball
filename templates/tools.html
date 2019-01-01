@@ -11,7 +11,9 @@
 <br /><br />
 <strong><u>Weekly Data Tools</u></strong> <br />
 These tools analyze weekly data.
-<span style='color:red'>Weekly Data Tools only work for leagues with <strong>H2H Most Cat.</strong> scoring.</span>
+<span style='color:red'>Weekly Data Tools only work for leagues with <strong>H2H Most Cat.</strong> scoring.</span><br/>
+<span style='color:red'><strong>NOTE:</strong> On the first day of the week, the weekly tools may not work properly because ESPN
+now updates its data daily instead of in real-time. If you see that all teams are tied, in means the data hasn't updated.</span>
 <ul>
     <li><a href = '{{ url_for('weekly_rankings', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Rankings</a><br /></li>
     <li><a href = '{{ url_for('weekly_matchups', leagueId=leagueId, seasonId=seasonId) }}'>Weekly Matchups</a><br /></li>
