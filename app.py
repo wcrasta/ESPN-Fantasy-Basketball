@@ -1,5 +1,7 @@
+import logging
+import os
+import urllib.parse as urlparse
 from operator import itemgetter
-from urllib.parse import parse_qs, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -12,37 +14,59 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 # Create the Flask application.
 app = Flask(__name__)
-app.debug = True
-app.secret_key = "super secret key"
+# TODO: Document this.
+app.config.from_object(os.environ['APP_SETTINGS'])
 
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    invalidURL = request.args.get('invalidURL') or False
-    return render_template('index.html', invalidURL=invalidURL)
-
+    return render_template('index.html')
 
 @app.route('/tools', methods=['GET', 'POST'])
 def tools():
     if request.method == 'POST':
         url = request.form['url']
-        query = parse_qs(urlparse(url).query, keep_blank_values=True)
-        try:
-            leagueId = str(query['leagueId'][0])
-            seasonId = str(query['seasonId'][0])
-            return redirect(url_for('tools', leagueId=leagueId, seasonId=seasonId))
-        except Exception as ex:
-            print('Exception in tools:' + ex)
-            return redirect(url_for('index', invalidURL=True))
-    else:
-        try:
-            leagueId = request.args.get('leagueId')
-            seasonId = request.args.get('seasonId')
-            return render_template('tools.html', leagueId=leagueId, seasonId=seasonId)
-        except Exception as ex:
-            print('Exception in tools2:' + ex)
-            return redirect(url_for('index', invalidURL=True))
+        logging.info('URL: ', url)
+        parsed_url = urlparse.urlparse(url)
 
+        try:
+            league_id = (urlparse.parse_qs(parsed_url.query, strict_parsing=True)['leagueId'])[0]
+        except Exception as ex:
+            logging.error('Could not get league id.', ex)
+            return render_template('index.html', league_id=None, season_id=None)
+
+        try:
+            season_id = (urlparse.parse_qs(parsed_url.query, strict_parsing=True)['seasonId'])[0]
+        except Exception as ex:
+            logging.info('Could not get season id.', ex)
+            return redirect(url_for('tools', leagueId=league_id, seasonId=2019))
+
+        return redirect(url_for('tools', leagueId=league_id, seasonId=season_id))
+    else:
+        league_id = request.args.get('leagueId')
+        season_id = request.args.get('seasonId')
+    return render_template('tools.html', league_id=league_id, season_id=season_id)
+
+# @app.route('/weekly_rankings', methods=['GET', 'POST'])
+# def weekly_rankings():
+#     leagueId = request.args.get('leagueId')
+#     seasonId = request.args.get('seasonId')
+#     week = request.form.get('week_selection')
+#     if week is None:
+#         week = getCurrentWeek(leagueId, seasonId)
+
+# try:
+#
+# week = request.form.get('week_selection')
+# if week is None:
+# week = getCurrentWeek(leagueId, seasonId)
+# session['currentWeek'] = week
+# url = ('http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}&matchupPeriodId={}')\
+# .format(leagueId, seasonId, week)
+# teams, categories, weeks = setup(url)
+# weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
+# except Exception as ex:
+# print('Exception in weekly rankings:' + ex)
+# return redirect(url_for('index', invalidURL=True))
 
 @app.route('/season_rankings')
 def season_rankings():
@@ -89,24 +113,7 @@ def season_analysis():
         return redirect(url_for('index', invalidURL=True))
 
 
-@app.route('/weekly_rankings', methods=['GET', 'POST'])
-def weekly_rankings():
-    try:
-        leagueId = request.args.get('leagueId')
-        seasonId = request.args.get('seasonId')
-        week = request.form.get('week_selection')
-        if week is None:
-            week = getCurrentWeek(leagueId, seasonId)
-        session['currentWeek'] = week
-        url = ('http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&seasonId={}&matchupPeriodId={}')\
-            .format(leagueId, seasonId, week)
-        teams, categories, weeks = setup(url)
-        weekly_rankings, weekly_matchups, weekly_analysis = computeStats(teams, categories)
-        return render_template('weekly_rankings.html', weekly_rankings=weekly_rankings, leagueId=leagueId,
-                               seasonId=seasonId, currentWeek=week, weeks=weeks)
-    except Exception as ex:
-        print('Exception in weekly rankings:' + ex)
-        return redirect(url_for('index', invalidURL=True))
+
 
 @app.route('/weekly_matchups', methods=['GET', 'POST'])
 def weekly_matchups():
@@ -349,7 +356,3 @@ def calculateScore(teamA, teamB, categories):
 # Run the Flask app.
 if __name__ == '__main__':
     app.run()
-
-# Comment out the if statement above and uncomment the line below to debug Python code.
-# teams, categories = setup('http://fantasy.espn.com/basketball/league/standings?leagueId=224165&seasonId=2019')
-# rankingsList, matchupsList, analysisList = computeStats(teams, categories)
