@@ -1,3 +1,5 @@
+{% from 'macros.html' import show_weeks_dropdown, show_menu %}
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -5,31 +7,19 @@
 </head>
 <body>
 <h1>Weekly Rankings</h1>
-<a href = '{{ url_for('index', leagueId=league_id, seasonId=season_id) }}'>Main Page</a> |
-<a href = '{{ url_for('tools', leagueId=league_id, seasonId=season_id) }}'>Tools Page</a>
+{{ show_menu(league_id) }}
+
 <br />
-<p>
-    <form method="POST" action="{{ url_for('weekly_rankings', leagueId=league_id, seasonId=season_id) }}">
-        <label>Show the results for: </label>
-        <select name="week_selection" onchange="this.form.submit()">
-            {% for week in weeks %}
-                {% set weekNum = (week.split(' ')[1]) %}
-                <option {% if currentWeek|string == weekNum|string %} selected="selected"{% endif %} value="{{weekNum}}">
-                    {{ week }}
-                </option>
-            {% endfor %}
-        </select>
-    </form>
-</p>
+{{ show_weeks_dropdown(league_id, current_week, weeks, 'weekly_rankings') }}
 <p>Weekly Rankings are automatically updated <strong>instantly</strong> and shows the hottest teams right now. In the event of a tie in
     the rankings, multiple teams will appear on the same line, delimited by a comma. </p>
 
-{% for item in weekly_rankings %}
-   {{ item }}<br>
+{% for item in rankings %}
+   {{ loop.index }}. {{ item[1]|join(', ') }}<br>
 {% endfor %}
 
 <br>
-<a href = '{{ url_for('weekly_matchups', leagueId=league_id, seasonId=season_id) }}'>See Weekly Matchups</a>
+<a href = '{{ url_for('weekly_matchups', leagueId=league_id) }}'>See Weekly Matchups</a>
 <h2>How It Works</h2>
 <p>The code scrapes the scoreboard table from the League Scoreboard page. It then compares a team's stats for the
     whole week against the stats for every other team and computes the score. The result of all these comparisons are

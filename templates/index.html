@@ -16,8 +16,7 @@
 </p>
 
 <form action='/tools' method= 'POST'>
-    <strong>Enter URL of league office page (ex: http://fantasy.espn.com/basketball/league?leagueId=224165&seasonId=2019):</strong><br/>
-    Optional: Add <span style='color:red'><strong>&seasonId=XXXX</strong></span> to your link, as shown above, to see results from previous seasons.<br/><br/>
+    <strong>Enter URL of league office/home page (ex: http://fantasy.espn.com/basketball/league?leagueId=224165):</strong><br/>
     {% if league_id is none %}
             <span style='color:red'>URL entered is incorrect. Please make sure it follows the format above or contact me if the error persists. </span><br/>
     {% endif %}

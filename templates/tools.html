@@ -1,3 +1,5 @@
+{% from 'macros.html' import show_menu %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,24 +8,20 @@
 </head>
 <body>
 <h1>Tools</h1>
-<a href = '{{ url_for('index', leagueId=league_id, seasonId=season_id) }}'>Main Page</a> |
-<a href = '{{ url_for('tools', leagueId=league_id, seasonId=season_id) }}'>Tools Page</a>
+{{ show_menu(league_id) }}
 <br /><br />
 <strong><u>Weekly Data Tools</u></strong> <br />
 These tools analyze weekly data.
 <span style='color:red'>Weekly Data Tools only work for leagues with <strong>H2H Most Cat.</strong> scoring.</span><br/>
 <ul>
-    <li><a href = '{{ url_for('weekly_rankings', leagueId=league_id, seasonId=season_id) }}'>Weekly Rankings</a><br /></li>
-    <li><a href = '{{ url_for('weekly_matchups', leagueId=league_id, seasonId=season_id) }}'>Weekly Matchups</a><br /></li>
-    <li><a href = '{{ url_for('weekly_analysis', leagueId=league_id, seasonId=season_id) }}'>Weekly Further Analysis</a><br /></li>
+    <li><a href = '{{ url_for('weekly_rankings', leagueId=league_id) }}'>Weekly Rankings</a><br /></li>
+    <li><a href = '{{ url_for('weekly_matchups', leagueId=league_id) }}'>Weekly Matchups</a><br /></li>
+    <li><a href = '{{ url_for('weekly_analysis', leagueId=league_id) }}'>Weekly Further Analysis</a><br /></li>
 </ul>
 <br />
 <strong><u>Season Data Tools</u></strong> <br />
 These tools analyze data from the whole season.
 <ul>
-    <li><a href = '{{ url_for('season_rankings', leagueId=league_id, seasonId=season_id) }}'>Season Rankings</a><br /></li>
-    <li><a href = '{{ url_for('season_matchups', leagueId=league_id, seasonId=season_id) }}'>Season Matchups</a><br /></li>
-    <li><a href = '{{ url_for('season_analysis', leagueId=league_id, seasonId=season_id) }}'>Season Further Analysis</a></li>
 </ul>
 </body>
 </html>

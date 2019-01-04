@@ -1,0 +1,20 @@
+{% macro show_weeks_dropdown(league_id, current_week, weeks, endpoint) %}
+    <p>
+        <form method="POST" action="{{ url_for(endpoint, leagueId=league_id) }}">
+            <label>Show the results for: </label>
+            <select name="week_selection" onchange="this.form.submit()">
+                {% for week in weeks %}
+                    {% set week_num = (week.split(' ')[1]) %}
+                    <option {% if current_week|string == week_num|string %} selected="selected"{% endif %} value="{{week_num}}">
+                        {{ week }}
+                    </option>
+                {% endfor %}
+            </select>
+        </form>
+    </p>
+{% endmacro %}
+
+{% macro show_menu(league_id) %}
+    <a href = '{{ url_for('index', leagueId=league_id) }}'>Main Page</a> |
+    <a href = '{{ url_for('tools', leagueId=league_id) }}'>Tools Page</a>
+{% endmacro %}

@@ -1,47 +1,74 @@
+{% from 'macros.html' import show_weeks_dropdown, show_menu %}
+
 <!DOCTYPE html>
 <html lang='en'>
 <head>
     <meta charset='UTF-8'>
     <title>Weekly Further Analysis</title>
+    <style>
+        table, td, th {
+          border: 1px solid black;
+          text-align: center;
+        }
+
+        table {
+            border-collapse: collapse;
+        }
+    </style>
 </head>
 <body>
 <h1>Weekly Further Analysis</h1>
-<a href = '{{ url_for('index', leagueId=leagueId, seasonId=seasonId) }}'>Main Page</a> |
-<a href = '{{ url_for('tools', leagueId=leagueId, seasonId=seasonId) }}'>Tools Page</a>
+{{ show_menu(league_id) }}
 <br />
-<p>
-    <form method="POST" action="{{ url_for('weekly_analysis', leagueId=leagueId, seasonId=seasonId) }}">
-        <label>Show the results for: </label>
-        <select name="week_selection" onchange="this.form.submit()">
-            {% for week in weeks %}
-                {% set weekNum = (week.split(' ')[1]) %}
-                <option {% if currentWeek|string == weekNum|string %} selected="selected"{% endif %} value="{{weekNum}}">
-                    {{ week }}
-                </option>
-            {% endfor %}
-        </select>
-    </form>
-</p>
+{{ show_weeks_dropdown(league_id, current_week, weeks, 'weekly_analysis') }}
 <p>The values listed are weekly values. For example, a PTS margin of +100 against an opponent means that if you had played that
 opponent this week, you would win PTS by a margin of +100.</p>
-{% set ns = namespace(count=0) %}
-{% for item in weekly_analysis %}
-    {% if item == ('*' * 100) %}
-        {{ item }} <br />
-    {% else %}
-        {% set results = weekly_matchups[ns.count].split()[-1] %}
-        {% set w = (results.split('-')[0]|int) %}
-        {% set l = (results.split('-')[1]|int) %}
-        {% if w > l %}
-            <span style='color:green'>{{ item }}</span>
-        {% elif w == l %}
-            {{ item }}
-        {% else %}
-            <span style='color:red'>{{ item }}</span>
-        {% endif %}
-        <br/>
-    {% endif %}
-    {% set ns.count = ns.count + 1 %}
+{% for team in analysis %}
+    <table>
+        <tr>
+            <th>Team 1</th>
+            <th>Team 2</th>
+            <th>Won</th>
+            <th>Lost</th>
+            <th>Tied</th>
+        </tr>
+        {% for team_matchup in team %}
+            {% set team_a = team_matchup[0] %}
+            {% set team_b = team_matchup[1] %}
+            {% set w = team_matchup[2][0] %}
+            {% set l = team_matchup[2][1] %}
+            {% set t = team_matchup[2][2] %}
+            {% set won_list = team_matchup[3] %}
+            {% set lost_list = team_matchup[4] %}
+            {% set tied_list = team_matchup[5] %}
+            {% set color = 'none' %}
+            {% if w > l %}
+                {% set color = 'green' %}
+            {% elif w < l %}
+                {% set color = 'red' %}
+            {% endif %}
+            <tr style ="color:{{ color }}">
+                <td>{{ team_a }}</td>
+                <td>{{ team_b }}</td>
+                <td>
+                    {% for won_item in won_list %}
+                        {{ won_item[0] }} ({{ won_item[1] }}),
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for won_item in lost_list %}
+                        {{ won_item[0] }} ({{ won_item[1] }}),
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for won_item in tied_list %}
+                        {{ won_item[0] }},
+                    {% endfor %}
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    <br/><br/>
 {% endfor %}
 </body>
 </html>
