@@ -1,0 +1,25 @@
+{% from 'macros.html' import show_weeks_dropdown, show_menu %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Season Rankings</title>
+</head>
+<body>
+<h1>Season Rankings</h1>
+{{ show_menu(league_id) }}
+<br />
+<p>Season Rankings are automatically updated everyday. In the event of a tie in the rankings, multiple teams will
+appear on the same line, delimited by a comma. </p>
+
+{% for item in rankings %}
+   {{ loop.index }}. {{ item[1]|join(', ') }}<br>
+{% endfor %}
+
+<br>
+<h2>How It Works</h2>
+<p> The code scrapes the "Season Stats" table from the League Standings page. It then compares a team's stats for the
+    whole season against the stats for every other team and computes the score. The result of all these comparisons are
+    displayed in the link above for the user to see. Teams with more wins against their peers are ranked higher in the
+    "Season Rankings".</p>
+</body>
+</html>
