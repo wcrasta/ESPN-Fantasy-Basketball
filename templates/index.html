@@ -20,6 +20,9 @@
     {% if league_id is none %}
             <span style='color:red'>URL entered is incorrect. Please make sure it follows the format above or contact me if the error persists. </span><br/>
     {% endif %}
+    {% if private_league == true %}
+            <span style='color:red'>Your league is private or the URL entered is incorrect. Ask your League Manager to make it public. </span><br/>
+    {% endif %}
   <input type='text' name='url'>
   <br><br>
   <input type='submit' value='Submit'>
