@@ -18,3 +18,100 @@
     <a href = '{{ url_for('index', leagueId=league_id) }}'>Main Page</a> |
     <a href = '{{ url_for('tools', leagueId=league_id) }}'>Tools Page</a>
 {% endmacro %}
+
+{% macro rankings_macro(type, league_id, current_week, weeks, rankings, intro, conclusion) %}
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>{{ type }} Rankings</title>
+    </head>
+    <body>
+    <h1>{{ type }} Rankings</h1>
+    {{ show_menu(league_id) }}
+    <br />
+    {% if 'Weekly' == type %}
+        {{ show_weeks_dropdown(league_id, current_week, weeks, 'weekly_rankings') }}
+    {% endif %}
+    <p>{{ intro }} In the event of a tie in
+        the rankings, multiple teams will appear on the same line, delimited by a comma. </p>
+
+    {% for item in rankings %}
+       {{ loop.index }}. {{ item[1]|join(', ') }}<br>
+    {% endfor %}
+
+    <br>
+    <a href = '{{ url_for(type.lower() + "_matchups", leagueId=league_id) }}'>See {{ type }} Matchups</a>
+    <h2>How It Works</h2>
+    <p>{{ conclusion }} It then compares a team's stats for the
+        whole {% if 'Weekly' == type %} {{ type.lower()[:-2] }} {% else %} {{ type.lower() }}{% endif %}
+        against the stats for every other team and computes the score. The result of all these comparisons are
+        displayed in the link above for the user to see. Teams with more wins against their peers are ranked higher in the
+        "{{ type }} Rankings".</p>
+    </body>
+    </html>
+{% endmacro %}
+
+{% macro matchups_macro(type, league_id, current_week, weeks, matchups) %}
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+        <meta charset='UTF-8'>
+        <title>{{ type }} Matchups</title>
+        <style>
+            table, td, th {
+              border: 1px solid black;
+              text-align: center;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 60%
+            }
+        </style>
+    </head>
+    <body>
+    <h1>{{ type }} Matchups</h1>
+    {{ show_menu(league_id) }}
+    <br />
+    {% if 'Weekly' == type %}
+        {{ show_weeks_dropdown(league_id, current_week, weeks, 'weekly_rankings') }}
+    {% endif %}
+    <p>This page shows: taking the whole {% if 'Weekly' == type %} {{ type.lower()[:-2] }} {% else %} {{ type.lower() }}{% endif %}'s data into account, how many categories would you win against each of your
+    opponents?</p>
+    <a href = '{{ url_for(type.lower() + "_analysis", leagueId=league_id) }}'>See {{ type }} Further Analysis</a><br/><br/>
+    {% for team in matchups %}
+        <table>
+            <tr>
+                <th>Team 1</th>
+                <th>Team 2</th>
+                <th>Won</th>
+                <th>Lost</th>
+                <th>Tied</th>
+            </tr>
+            {% for team_matchup in team %}
+                {% set team_a = team_matchup[0] %}
+                {% set team_b = team_matchup[1] %}
+                {% set w = team_matchup[2][0] %}
+                {% set l = team_matchup[2][1] %}
+                {% set t = team_matchup[2][2] %}
+                {% set color = 'none' %}
+                {% if w > l %}
+                    {% set color = 'green' %}
+                {% elif w < l %}
+                    {% set color = 'red' %}
+                {% endif %}
+                <tr style ="color:{{ color }}">
+                    <td>{{ team_a }}</td>
+                    <td>{{ team_b }}</td>
+                    <td>{{ w }}</td>
+                    <td>{{ l }}</td>
+                    <td>{{ t }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+        <br/><br/>
+    {% endfor %}
+    </body>
+    </html>
+{% endmacro %}
+

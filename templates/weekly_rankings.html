@@ -1,29 +1,5 @@
-{% from 'macros.html' import show_weeks_dropdown, show_menu %}
+{% from 'macros.html' import rankings_macro %}
 
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Weekly Rankings</title>
-</head>
-<body>
-<h1>Weekly Rankings</h1>
-{{ show_menu(league_id) }}
-
-<br />
-{{ show_weeks_dropdown(league_id, current_week, weeks, 'weekly_rankings') }}
-<p>Weekly Rankings are automatically updated <strong>instantly</strong> and shows the hottest teams right now. In the event of a tie in
-    the rankings, multiple teams will appear on the same line, delimited by a comma. </p>
-
-{% for item in rankings %}
-   {{ loop.index }}. {{ item[1]|join(', ') }}<br>
-{% endfor %}
-
-<br>
-<a href = '{{ url_for('weekly_matchups', leagueId=league_id) }}'>See Weekly Matchups</a>
-<h2>How It Works</h2>
-<p>The code scrapes the scoreboard table from the League Scoreboard page. It then compares a team's stats for the
-    whole week against the stats for every other team and computes the score. The result of all these comparisons are
-    displayed in the link above for the user to see. Teams with more wins against their peers are ranked higher in the
-    "Weekly Rankings".</p>
-</body>
-</html>
+{{ rankings_macro('Weekly', league_id, current_week, weeks, rankings,
+'Weekly Rankings are automatically updated instantly and shows the hottest teams right now.',
+'The code scrapes the scoreboard table from the League Scoreboard page.') }}
