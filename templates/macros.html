@@ -1,4 +1,7 @@
 {% macro show_weeks_dropdown(league_id, current_week, weeks, endpoint) %}
+
+
+    <!--suppress Annotator -->
     <p>
         <form method="POST" action="{{ url_for(endpoint, leagueId=league_id) }}">
             <label>Show the results for: </label>
