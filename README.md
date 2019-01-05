@@ -8,9 +8,8 @@ A live demo of the app can be found at http://fantasy.warrencrasta.com/. If you 
 1. Create a virtual environment using [venv and Python 3.5](https://docs.python.org/3/library/venv.html) (optional, but highly recommended). Activate the virtual environment.
 2. Run **pip install -r requirements.txt** to install the dependencies for this project.
 3. Open your favorite IDE and configure the project so that the Python interpreter + package sources comes from your virtual environment (optional, but highly recommended).
-4. Add an environment variable `APP_SETTINGS=config.DevelopmentConfig`. You can do this through PyCharm or on your system itself.
-5. Download [ChromeDriver](http://chromedriver.chromium.org/downloads) and put it in your path, preferably somewhere within your virtual environment. Instructions vary by OS. You might have to Google where to properly place ChromeDriver to get it working.
-6. Run or debug the program!
+4. Download [ChromeDriver](http://chromedriver.chromium.org/downloads) and put it in your path, preferably somewhere within your virtual environment. Instructions vary by OS. You might have to Google where to properly place ChromeDriver to get it working.
+5. Run or debug the program!
 
 ## Improvements/Possible Added Features
 Feel free to contribute to this project! There are many improvements that can be made, both in terms of code quality and in terms of whole new ideas that can be implemented. Both the front-end and back-end are simple and can be enhanced.

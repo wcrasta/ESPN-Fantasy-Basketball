@@ -3,6 +3,7 @@ import os
 import sys
 import urllib.parse as urlparse
 from operator import itemgetter
+import config
 
 import requests
 from bs4 import BeautifulSoup
@@ -16,7 +17,7 @@ from selenium.webdriver.support.wait import WebDriverWait
 # Create the Flask application.
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
-app.config.from_object(os.environ['APP_SETTINGS'])
+app.config.from_object(config.ProductionConfig)
 
 @app.route('/', methods=['GET'])
 def index():
