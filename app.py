@@ -18,15 +18,13 @@ from selenium.webdriver.support.wait import WebDriverWait
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 
-# TODO: Document OS_Environ.
-# TODO: Logging and error handling.
+# TODO: Logging and error handling. Don't catch exception.
 # TODO: Break app into smaller portions.
-# TODO: Stop catching Exception everywhere.
-# TODO: use macros
-#TODO: Check for camel case
 # TODO: -- values
 # TODO - Remov string hardcode
 # TODO - PEP and formatting
+# TODO: Pip freeze
+# TODO: Private league
 
 @app.route('/', methods=['GET'])
 def index():
@@ -71,6 +69,18 @@ def season_rankings():
     season_values = endpoints_setup(True)
     return render_template('season_rankings.html', league_id=season_values[0], rankings=season_values[3][0])
 
+@app.route('/season_matchups', methods=['GET', 'POST'])
+def season_matchups():
+    season_values = endpoints_setup(True)
+    return render_template('season_matchups.html', league_id=season_values[0], current_week=season_values[1],
+                           weeks=season_values[2], matchups=season_values[3][1])
+
+@app.route('/season_analysis', methods=['GET', 'POST'])
+def season_analysis():
+    season_values = endpoints_setup(True)
+    return render_template('season_analysis.html', league_id=season_values[0], current_week=season_values[1],
+                           weeks=season_values[2], analysis=season_values[3][1])
+
 def endpoints_setup(is_season_data):
     league_id = request.args.get('leagueId')
     week = get_current_week(league_id)
@@ -79,7 +89,7 @@ def endpoints_setup(is_season_data):
     else:
         url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}'.format(league_id, week)
     teams, categories, weeks = setup(url)
-    stats = computeStats(teams, categories)
+    stats = compute_stats(teams, categories)
     endpoints_params = league_id, week, weeks, stats
     return endpoints_params
 
@@ -144,31 +154,31 @@ def setup(url):
         categories = soup.find_all('thead', class_='Table2__sub-header Table2__thead')[1]
         categories = categories.find('tr', class_='Table2__header-row Table2__tr Table2__even').find_all('th')
         categories = [c.string for c in categories if c.string is not None]
-        tableBody = soup.find_all('table', class_='Table2__table-scroller Table2__right-aligned Table2__table')[0]
-        tableRows = tableBody.findAll('tr', {'class': 'Table2__tr Table2__tr--md Table2__even'})
+        table_body = soup.find_all('table', class_='Table2__table-scroller Table2__right-aligned Table2__table')[0]
+        table_rows = table_body.findAll('tr', {'class': 'Table2__tr Table2__tr--md Table2__even'})
     else:
         weeks = soup.find("select", class_='dropdown__select').find_all("option")
         weeks = [w.text for w in weeks]
         categories = soup.find_all('tr', class_='Table2__header-row Table2__tr Table2__even')[0].find_all('th')
         categories = [c.string for c in categories if c.string is not None]
-        tableRows = soup.findAll('tr', {'class': 'Table2__tr Table2__tr--sm Table2__even'})
+        table_rows = soup.findAll('tr', {'class': 'Table2__tr Table2__tr--sm Table2__even'})
 
-    teams = createTeamsMatrix(is_season_data, categories, tableRows)
+    teams = create_teams_matrix(is_season_data, categories, table_rows)
     if is_season_data:
-        tableBody = soup.find_all('section', class_='Table2__responsiveTable Table2__table-outer-wrap Table2--hasFixed-left Table2--hasFixed-right')[0]
-        teamNames = tableBody.find_all('span', class_='teamName truncate')
+        table_body = soup.find_all('section', class_='Table2__responsiveTable Table2__table-outer-wrap Table2--hasFixed-left Table2--hasFixed-right')[0]
+        team_names = table_body.find_all('span', class_='teamName truncate')
     else:
-        teamNames = soup.find_all('div',
+        team_names = soup.find_all('div',
                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
 
-    teamNames = [t.string for t in teamNames]
+    team_names = [t.string for t in team_names]
     # Add team names for each team
     for idx, team in enumerate(teams):
-        team.insert(0, teamNames[idx])
+        team.insert(0, team_names[idx])
 
     return teams, categories, weeks
 
-def createTeamsMatrix(is_season_data, categories, table_rows):
+def create_teams_matrix(is_season_data, categories, table_rows):
     # Creates a 2-D matrix which resembles the Weekly Scoreboard or Season Stats table.
     teams = []
     for row in range(len(table_rows)):
@@ -184,33 +194,33 @@ def createTeamsMatrix(is_season_data, categories, table_rows):
     return teams
 
 # Computes the standings and matchups.
-def computeStats(teams, categories):
+def compute_stats(teams, categories):
     # Initialize the dictionary which will hold information about each team along with their "standings score".
-    teamDict = {}
+    team_dict = {}
     for team in teams:
-        teamDict[team[0]] = 0
+        team_dict[team[0]] = 0
     matchups = []
     for team1 in teams:
         team_matchup = []
         for team2 in teams:
             if team1 != team2:
-                score, wonMargin, lostMargin, tiedMargin = calculateScore(team1[1:], team2[1:], categories)
+                score, won_margin, lost_margin, tied_margin = calculate_score(team1[1:], team2[1:], categories)
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
                 if score[0] > score[1]:
-                    teamDict[team1[0]] += 1
+                    team_dict[team1[0]] += 1
                 elif score[0] < score[1]:
-                    teamDict[team1[0]] -= 1
-                team_matchup.append(list([team1[0], team2[0], score, wonMargin, lostMargin, tiedMargin]))
+                    team_dict[team1[0]] -= 1
+                team_matchup.append(list([team1[0], team2[0], score, won_margin, lost_margin, tied_margin]))
         matchups.append(team_matchup)
 
     # Check if two keys in the dictionary have the same value (used to process ties in standings score).
     result = {}
-    for val in teamDict:
-        if teamDict[val] in result:
-            result[teamDict[val]].append(val)
+    for val in team_dict:
+        if team_dict[val] in result:
+            result[team_dict[val]].append(val)
         else:
-            result[teamDict[val]] = [val]
+            result[team_dict[val]] = [val]
 
     # Sort the dictionary by greatest standings score.
     rankings = sorted(result.items(), key=itemgetter(0), reverse=True)
@@ -218,44 +228,44 @@ def computeStats(teams, categories):
 
 
 # Calculates the score for individual matchups.
-def calculateScore(teamA, teamB, categories):
+def calculate_score(team1, team2, categories):
     wins = 0
     losses = 0
     ties = 0
-    wonMargin = []
-    lostMargin = []
-    tiedMargin = []
+    won_margin = []
+    lost_margin = []
+    tied_margin = []
 
     try:
         to_idx = categories.index('TO')
     except ValueError:
         to_idx = -1
 
-    for idx, (a, b) in enumerate(zip(teamA, teamB)):
+    for idx, (a, b) in enumerate(zip(team1, team2)):
         a = float(a)
         b = float(b)
         # When comparing turnovers, having a smaller value is a "win".
         if idx == to_idx:
             if a < b:
                 wins += 1
-                wonMargin.append((categories[idx], b - a))
+                won_margin.append((categories[idx], b - a))
             elif a == b:
                 ties += 1
-                tiedMargin.append((categories[idx], b - a))
+                tied_margin.append((categories[idx], b - a))
             else:
                 losses += 1
-                lostMargin.append((categories[idx], b - a))
+                lost_margin.append((categories[idx], b - a))
         else:
             if a > b:
                 wins += 1
-                wonMargin.append((categories[idx], round((a - b), 4)))
+                won_margin.append((categories[idx], round((a - b), 4)))
             elif a == b:
                 ties += 1
-                tiedMargin.append((categories[idx], round((a - b), 4)))
+                tied_margin.append((categories[idx], round((a - b), 4)))
             else:
                 losses += 1
-                lostMargin.append((categories[idx], round((a - b), 4)))
-    score = (wins, losses, ties), wonMargin, lostMargin, tiedMargin
+                lost_margin.append((categories[idx], round((a - b), 4)))
+    score = (wins, losses, ties), won_margin, lost_margin, tied_margin
     return score
 
 # Run the Flask app.
