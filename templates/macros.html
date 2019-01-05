@@ -1,3 +1,15 @@
+{% macro google_analytics() %}
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-131744868-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-131744868-2');
+    </script>
+{% endmacro %}
+
 {% macro show_weeks_dropdown(league_id, current_week, weeks, endpoint) %}
 
 
@@ -26,6 +38,7 @@
     <!DOCTYPE html>
     <html>
     <head>
+        {{ google_analytics() }}
         <title>{{ type }} Rankings</title>
     </head>
     <body>
@@ -58,6 +71,7 @@
     <!DOCTYPE html>
     <html lang='en'>
     <head>
+        {{ google_analytics() }}
         <meta charset='UTF-8'>
         <title>{{ type }} Matchups</title>
         <style>
@@ -122,6 +136,7 @@
     <!DOCTYPE html>
     <html lang='en'>
     <head>
+        {{ google_analytics() }}
         <meta charset='UTF-8'>
         <title>{{ type }} Further Analysis</title>
         <style>
