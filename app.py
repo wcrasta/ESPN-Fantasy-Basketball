@@ -18,11 +18,6 @@ app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 app.config.from_object(os.environ['APP_SETTINGS'])
 
-# TODO: Break app into smaller portions.
-# TODO: Pip freeze
-# TODO: 500 internal server
-# TODO: email when error
-
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
@@ -114,8 +109,11 @@ def endpoints_setup(is_season_data):
         url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}'\
             .format(league_id, week)
 
-    teams, categories, weeks = setup(url)
-    stats = compute_stats(teams, categories)
+    teams, categories, weeks = setup(url, league_id)
+    stats = compute_stats(teams, categories, league_id)
+    if not teams or not categories or not stats:
+        app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
+        sys.exit('Teams, categories, or stats list empty.')
     endpoints_params = league_id, week, weeks, stats
     return endpoints_params
 
@@ -129,83 +127,83 @@ def get_current_week(league_id):
             week = 'private'
         else:
             week = data['status']['currentMatchupPeriod']
-    app.logger.info('Week requested: %s', week)
+    app.logger.info('%s - Week requested: %s', league_id, week)
     return week
 
 def call_espn_api(league_id):
-    app.logger.info('Calling ESPN API')
+    app.logger.info('%s - Calling ESPN API', league_id)
     url = ("http://fantasy.espn.com/apis/v3/games/fba/seasons/{}/segments/0/leagues/{}?view=mMatchupScore&view"
            "mScoreboard&view=mSettings&view=mTeam&view=modular&view=mNav").format(app.config.get("SEASON"), league_id)
     try:
         r = requests.get(url)
     except requests.exceptions.RequestException as ex:
-        app.logger.error(ex)
+        app.logger.error('%s - Could not make ESPN API call', league_id, ex)
         sys.exit('Could not make ESPN API call.')
     data = r.json()
     return data
 
-def setup(url):
+def setup(url, league_id):
     is_season_data = 'standings' in url
-    soup = runSelenium(url, is_season_data)
+    soup = runSelenium(url, is_season_data, league_id)
     if soup is None:
         sys.exit('BeautifulSoup object is None.')
 
-    app.logger.info('Scraping list of weeks')
+    app.logger.info('%s - Scraping list of weeks', league_id)
     weeks = None
     if not is_season_data:
         weeks = soup.find("select", class_='dropdown__select').find_all("option")
         weeks = [w.text for w in weeks]
 
     try:
-        table_rows, categories = get_table_rows_and_cats(soup, is_season_data)
-        app.logger.info('Successfully scraped table_rows and categories')
+        table_rows, categories = get_table_rows_and_cats(soup, is_season_data, league_id)
+        app.logger.info('%s - Successfully scraped table_rows and categories', league_id)
     except Exception as ex:
-        app.logger.error(ex)
+        app.logger.error('%s - Could not get rows and categories', league_id, ex)
         sys.exit('Could not get rows and categories')
 
     try:
-        teams = create_teams_matrix(is_season_data, categories, table_rows)
-        app.logger.info('Successfully created teams matrix')
+        teams = create_teams_matrix(is_season_data, categories, table_rows, league_id)
+        app.logger.info('%s - Successfully created teams matrix', league_id)
     except Exception as ex:
-        app.logger.error(ex)
+        app.logger.error('%s - Could not create teams matrix', league_id, ex)
         sys.exit('Could not create teams matrix')
     try:
-        append_team_names(soup, is_season_data, teams)
-        app.logger.info('Successfully appended team names')
+        append_team_names(soup, is_season_data, teams, league_id)
+        app.logger.info('%s - Successfully appended team names', league_id)
     except Exception as ex:
-        app.logger.error(ex)
+        app.logger.error('%s - Could not append team names', league_id, ex)
         sys.exit('Could not append team names')
 
     return teams, categories, weeks
 
-def runSelenium(url, is_season_data):
+def runSelenium(url, is_season_data, league_id):
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
     capa = DesiredCapabilities.CHROME
     capa["pageLoadStrategy"] = "none"
     driver = webdriver.Chrome(chrome_options=options, desired_capabilities=capa)
     try:
-        app.logger.info('Starting selenium')
+        app.logger.info('%s - Starting selenium', league_id)
         driver.get(url)
-        app.logger.info('Waiting for element to load')
+        app.logger.info('%s - Waiting for element to load', league_id)
         # Season standings have a different URL than weekly scoreboard
         if is_season_data:
             WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
         else:
             WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
-        app.logger.info('Element loaded')
+        app.logger.info('%s - Element loaded', league_id)
         plain_text = driver.page_source
         soup = BeautifulSoup(plain_text, 'lxml')
-        app.logger.info('Got BeautifulSoup object')
+        app.logger.info('%s - Got BeautifulSoup object', league_id)
     except Exception as ex:
-        app.logger.error('Could not get page source.', ex)
+        app.logger.error('%s - Could not get page source.', league_id, ex)
         soup = None
     finally:
         driver.quit()
     return soup
 
-def get_table_rows_and_cats(soup, is_season_data):
-    app.logger.info('Starting scraping table_rows and categories')
+def get_table_rows_and_cats(soup, is_season_data, league_id):
+    app.logger.info('%s - Starting scraping table_rows and categories', league_id)
     # Scrape objects depending on whether the user asked for season or weekly data.
     if is_season_data:
         categories_list = soup.find_all('thead', class_='Table2__sub-header Table2__thead')[1]
@@ -214,14 +212,14 @@ def get_table_rows_and_cats(soup, is_season_data):
     else:
         categories_list = soup
         table_body = soup
-        rows_class = 'Table2__tr Table2__tr--md Table2__even'
+        rows_class = 'Table2__tr Table2__tr--sm Table2__even'
     categories = categories_list.find('tr', class_='Table2__header-row Table2__tr Table2__even').find_all('th')
     categories = [c.string for c in categories if c.string is not None]
     table_rows = table_body.findAll('tr', {'class': rows_class})
     return table_rows, categories
 
-def create_teams_matrix(is_season_data, categories, table_rows):
-    app.logger.info("Creating teams matrix")
+def create_teams_matrix(is_season_data, categories, table_rows, league_id):
+    app.logger.info('%s - Creating teams matrix', league_id)
     # Creates a 2-D matrix which resembles the Weekly Scoreboard or Season Stats table.
     teams = []
     for row in range(len(table_rows)):
@@ -234,8 +232,8 @@ def create_teams_matrix(is_season_data, categories, table_rows):
         teams.append(team_row)
     return teams
 
-def append_team_names(soup, is_season_data, teams):
-    app.logger.info('Appending team names')
+def append_team_names(soup, is_season_data, teams, league_id):
+    app.logger.info('%s - Appending team names', league_id)
     if is_season_data:
         table_body_class='Table2__responsiveTable Table2__table-outer-wrap Table2--hasFixed-left Table2--hasFixed-right'
         table_body = soup.find_all('section', class_=table_body_class)[0]
@@ -250,8 +248,8 @@ def append_team_names(soup, is_season_data, teams):
         team.insert(0, team_names[idx])
 
 # Computes the standings and matchups.
-def compute_stats(teams, categories):
-    app.logger.info('Starting to compute stats')
+def compute_stats(teams, categories, league_id):
+    app.logger.info('%s - Starting to compute stats', league_id)
     # Initialize the dictionary which will hold information about each team along with their "standings score".
     team_dict = {}
     for team in teams:
@@ -262,9 +260,9 @@ def compute_stats(teams, categories):
         for team2 in teams:
             if team1 != team2:
                 try:
-                    score, won_margin, lost_margin, tied_margin = calculate_score(team1[1:], team2[1:], categories)
+                    score, won_margin, lost_margin, tied_margin = calculate_score(team1[1:], team2[1:], categories, league_id)
                 except Exception as ex:
-                    app.logger.error(ex)
+                    app.logger.error('%s - Could not calculate score.', league_id, ex)
                     sys.exit('Could not calculate score.')
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
@@ -274,7 +272,7 @@ def compute_stats(teams, categories):
                     team_dict[team1[0]] -= 1
                 team_matchup.append(list([team1[0], team2[0], score, won_margin, lost_margin, tied_margin]))
         matchups.append(team_matchup)
-    app.logger.info('Sucessfully created matchups/analysis list')
+    app.logger.info('%s - Sucessfully created matchups/analysis list', league_id)
     # Check if two keys in the dictionary have the same value (used to process ties in standings score).
     result = {}
     for val in team_dict:
@@ -285,12 +283,12 @@ def compute_stats(teams, categories):
 
     # Sort the dictionary by greatest standings score.
     rankings = sorted(result.items(), key=itemgetter(0), reverse=True)
-    app.logger.info('Sucessfully calculated rankings')
+    app.logger.info('%s - Sucessfully calculated rankings', league_id)
     return rankings, matchups
 
 
 # Calculates the score for individual matchups.
-def calculate_score(team1, team2, categories):
+def calculate_score(team1, team2, categories, league_id):
     wins = 0
     losses = 0
     ties = 0
@@ -304,9 +302,9 @@ def calculate_score(team1, team2, categories):
         to_idx = -1
 
     for idx, (a, b) in enumerate(zip(team1, team2)):
-        if not isfloat(a):
+        if not isfloat(a, league_id):
             a = 0.0
-        if not isfloat(b):
+        if not isfloat(b, league_id):
             b = 0.0
         a = float(a)
         b = float(b)
@@ -334,12 +332,12 @@ def calculate_score(team1, team2, categories):
     score = (wins, losses, ties), won_margin, lost_margin, tied_margin
     return score
 
-def isfloat(value):
+def isfloat(value, league_id):
     try:
         float(value)
         return True
     except ValueError:
-        app.logger.error('Could not convert %s to float', value)
+        app.logger.error('%s - Could not convert %s to float', league_id, value)
         return False
 
 # Run the Flask app.

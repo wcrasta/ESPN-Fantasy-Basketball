@@ -169,17 +169,17 @@
                     <td>{{ team_b }}</td>
                     <td>
                         {% for won_item in won_list %}
-                            {{ won_item[0] }} ({{ won_item[1] }}),
+                            <strong>{{ won_item[0] }}</strong> ({{ won_item[1] }}),
                         {% endfor %}
                     </td>
                     <td>
-                        {% for won_item in lost_list %}
-                            {{ won_item[0] }} ({{ won_item[1] }}),
+                        {% for lost_item in lost_list %}
+                            <strong>{{ lost_item[0] }}</strong> ({{ lost_item[1] }}),
                         {% endfor %}
                     </td>
                     <td>
-                        {% for won_item in tied_list %}
-                            {{ won_item[0] }},
+                        {% for tied_item in tied_list %}
+                            <strong>{{ tied_item[0] }}</strong>,
                         {% endfor %}
                     </td>
                 </tr>
