@@ -1,23 +1,27 @@
 import logging
-import os
 import sys
 import urllib.parse as urlparse
 from operator import itemgetter
-import config
 
 import requests
 from bs4 import BeautifulSoup
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
+import config
+
 # Create the Flask application.
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 app.config.from_object(config.ProductionConfig)
+
+@app.errorhandler(500)
+def abort_error(e):
+    return render_template('error.html'), 500
 
 @app.route('/', methods=['GET'])
 def index():
@@ -114,6 +118,7 @@ def endpoints_setup(is_season_data):
     stats = compute_stats(teams, categories, league_id)
     if not teams or not categories or not stats:
         app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
+        abort(500)
         sys.exit('Teams, categories, or stats list empty.')
     endpoints_params = league_id, week, weeks, stats
     return endpoints_params
@@ -139,14 +144,16 @@ def call_espn_api(league_id):
         r = requests.get(url)
     except requests.exceptions.RequestException as ex:
         app.logger.error('%s - Could not make ESPN API call', league_id, ex)
+        abort(500)
         sys.exit('Could not make ESPN API call.')
     data = r.json()
     return data
 
 def setup(url, league_id):
     is_season_data = 'standings' in url
-    soup = runSelenium(url, is_season_data, league_id)
+    soup = run_selenium(url, is_season_data, league_id)
     if soup is None:
+        abort(500)
         sys.exit('BeautifulSoup object is None.')
 
     app.logger.info('%s - Scraping list of weeks', league_id)
@@ -160,6 +167,7 @@ def setup(url, league_id):
         app.logger.info('%s - Successfully scraped table_rows and categories', league_id)
     except Exception as ex:
         app.logger.error('%s - Could not get rows and categories', league_id, ex)
+        abort(500)
         sys.exit('Could not get rows and categories')
 
     try:
@@ -167,17 +175,19 @@ def setup(url, league_id):
         app.logger.info('%s - Successfully created teams matrix', league_id)
     except Exception as ex:
         app.logger.error('%s - Could not create teams matrix', league_id, ex)
+        abort(500)
         sys.exit('Could not create teams matrix')
     try:
         append_team_names(soup, is_season_data, teams, league_id)
         app.logger.info('%s - Successfully appended team names', league_id)
     except Exception as ex:
         app.logger.error('%s - Could not append team names', league_id, ex)
+        abort(500)
         sys.exit('Could not append team names')
 
     return teams, categories, weeks
 
-def runSelenium(url, is_season_data, league_id):
+def run_selenium(url, is_season_data, league_id):
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
     capa = DesiredCapabilities.CHROME
@@ -264,6 +274,7 @@ def compute_stats(teams, categories, league_id):
                     score, won_margin, lost_margin, tied_margin = calculate_score(team1[1:], team2[1:], categories, league_id)
                 except Exception as ex:
                     app.logger.error('%s - Could not calculate score.', league_id, ex)
+                    abort(500)
                     sys.exit('Could not calculate score.')
                 # The value for the dictionary is the power rankings score. A win increases the score and a loss
                 # decreases the "PR" score.
@@ -297,10 +308,14 @@ def calculate_score(team1, team2, categories, league_id):
     lost_margin = []
     tied_margin = []
 
-    try:
-        to_idx = categories.index('TO')
-    except ValueError:
-        to_idx = -1
+    bad_categories = ['FGMI', 'FTMI', '3PMI', 'TO', 'EJ', 'FF', 'PF', 'TF', 'DQ']
+
+    bad_categories_idx = []
+    for bad_category in bad_categories:
+        try:
+            bad_categories_idx.append(categories.index(bad_category))
+        except ValueError:
+            pass
 
     for idx, (a, b) in enumerate(zip(team1, team2)):
         if not isfloat(a, league_id):
@@ -310,7 +325,7 @@ def calculate_score(team1, team2, categories, league_id):
         a = float(a)
         b = float(b)
         # When comparing turnovers, having a smaller value is a "win".
-        if idx == to_idx:
+        if idx in bad_categories_idx:
             if a < b:
                 wins += 1
                 won_margin.append((categories[idx], b - a))

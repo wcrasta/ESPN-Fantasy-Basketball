@@ -1,0 +1,23 @@
+{% from 'macros.html' import google_analytics %}
+<!DOCTYPE html>
+<!--suppress HtmlUnknownTarget -->
+<html>
+<head>
+    {{ google_analytics() }}
+    <title>Error</title>
+</head>
+<body>
+<h1>Error</h1>
+<p>
+    Hey there, something you did caused an error in the application. Usually this is because of one or more of the following:
+    <ol>
+        <li>Too many people are using my application at this time. </li>
+        <li>Your league isn't a categories league and you tried visiting the weekly tools. </li>
+        <li>There was some kind of problem in my code. </li>
+    </ol>
+    If you continue receiving errors even after some time and aren't sure why, please send me an e-mail at
+    <a href="mailto:warrencrasta@gmail.com">warrencrasta@gmail.com</a> along with the action you tried + the time (timezone
+    too) and I'd be happy to look into the issue. Thank you for visiting my website and best of luck for the fantasy season!
+</p>
+</body>
+</html>
