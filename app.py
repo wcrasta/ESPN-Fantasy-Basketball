@@ -2,6 +2,7 @@ import logging
 import sys
 import urllib.parse as urlparse
 from operator import itemgetter
+import time
 
 import requests
 from bs4 import BeautifulSoup
@@ -198,11 +199,13 @@ def run_selenium(url, is_season_data, league_id):
         driver.get(url)
         app.logger.info('%s - Waiting for element to load', league_id)
         # Season standings have a different URL than weekly scoreboard
+        
         if is_season_data:
             WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
         else:
             WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
-        app.logger.info('%s - Element loaded', league_id)
+        app.logger.info('%s - Element loaded. Sleeping started to get latest data.', league_id)
+        time.sleep(5)
         plain_text = driver.page_source
         soup = BeautifulSoup(plain_text, 'lxml')
         app.logger.info('%s - Got BeautifulSoup object', league_id)
