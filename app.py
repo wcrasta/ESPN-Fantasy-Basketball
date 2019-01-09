@@ -10,7 +10,7 @@ from flask import Flask, render_template, request, redirect, url_for, abort
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.expected_conditions import presence_of_element_located
 from selenium.webdriver.support.wait import WebDriverWait
 
 import config
@@ -20,13 +20,16 @@ app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
 app.config.from_object(config.ProductionConfig)
 
+
 @app.errorhandler(500)
-def abort_error(e):
+def abort_error():
     return render_template('error.html'), 500
+
 
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html')
+
 
 @app.route('/tools', methods=['GET', 'POST'])
 def tools():
@@ -52,6 +55,7 @@ def tools():
             return render_template('index.html', league_id=league_id, private_league=True)
     return render_template('tools.html', league_id=league_id)
 
+
 @app.route('/weekly_rankings', methods=['GET', 'POST'])
 def weekly_rankings():
     weekly_values = endpoints_setup(False)
@@ -60,6 +64,7 @@ def weekly_rankings():
         return render_template('index.html', league_id=league_id, private_league=True)
     return render_template('weekly_rankings.html', league_id=league_id, current_week=weekly_values[1],
                            weeks=weekly_values[2], rankings=weekly_values[3][0])
+
 
 @app.route('/weekly_matchups', methods=['GET', 'POST'])
 def weekly_matchups():
@@ -70,6 +75,7 @@ def weekly_matchups():
     return render_template('weekly_matchups.html', league_id=league_id, current_week=weekly_values[1],
                            weeks=weekly_values[2], matchups=weekly_values[3][1])
 
+
 @app.route('/weekly_analysis', methods=['GET', 'POST'])
 def weekly_analysis():
     weekly_values = endpoints_setup(False)
@@ -79,6 +85,7 @@ def weekly_analysis():
     return render_template('weekly_analysis.html', league_id=league_id, current_week=weekly_values[1],
                            weeks=weekly_values[2], analysis=weekly_values[3][1])
 
+
 @app.route('/season_rankings')
 def season_rankings():
     season_values = endpoints_setup(True)
@@ -86,6 +93,7 @@ def season_rankings():
     if season_values[1] == 'private':
         return render_template('index.html', league_id=league_id, private_league=True)
     return render_template('season_rankings.html', league_id=league_id, rankings=season_values[3][0])
+
 
 @app.route('/season_matchups', methods=['GET', 'POST'])
 def season_matchups():
@@ -96,6 +104,7 @@ def season_matchups():
     return render_template('season_matchups.html', league_id=league_id, current_week=season_values[1],
                            weeks=season_values[2], matchups=season_values[3][1])
 
+
 @app.route('/season_analysis', methods=['GET', 'POST'])
 def season_analysis():
     season_values = endpoints_setup(True)
@@ -105,6 +114,7 @@ def season_analysis():
     return render_template('season_analysis.html', league_id=league_id, current_week=season_values[1],
                            weeks=season_values[2], analysis=season_values[3][1])
 
+
 def endpoints_setup(is_season_data):
     league_id = request.args.get('leagueId')
     app.logger.info('League ID: %s', str(league_id))
@@ -112,7 +122,7 @@ def endpoints_setup(is_season_data):
     if is_season_data:
         url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}'.format(league_id)
     else:
-        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}'\
+        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
             .format(league_id, week)
 
     teams, categories, weeks = setup(url, league_id)
@@ -123,6 +133,7 @@ def endpoints_setup(is_season_data):
         sys.exit('Teams, categories, or stats list empty.')
     endpoints_params = league_id, week, weeks, stats
     return endpoints_params
+
 
 def get_current_week(league_id):
     # First get it from the dropdown
@@ -137,6 +148,7 @@ def get_current_week(league_id):
     app.logger.info('%s - Week requested: %s', league_id, week)
     return week
 
+
 def call_espn_api(league_id):
     app.logger.info('%s - Calling ESPN API', league_id)
     url = ("http://fantasy.espn.com/apis/v3/games/fba/seasons/{}/segments/0/leagues/{}?view=mMatchupScore&view"
@@ -149,6 +161,7 @@ def call_espn_api(league_id):
         sys.exit('Could not make ESPN API call.')
     data = r.json()
     return data
+
 
 def setup(url, league_id):
     is_season_data = 'standings' in url
@@ -188,6 +201,7 @@ def setup(url, league_id):
 
     return teams, categories, weeks
 
+
 def run_selenium(url, is_season_data, league_id):
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
@@ -199,11 +213,11 @@ def run_selenium(url, is_season_data, league_id):
         driver.get(url)
         app.logger.info('%s - Waiting for element to load', league_id)
         # Season standings have a different URL than weekly scoreboard
-        
+
         if is_season_data:
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
+            WebDriverWait(driver, 30).until(presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
         else:
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
+            WebDriverWait(driver, 30).until(presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
         app.logger.info('%s - Element loaded. Sleeping started to get latest data.', league_id)
         time.sleep(5)
         plain_text = driver.page_source
@@ -216,13 +230,14 @@ def run_selenium(url, is_season_data, league_id):
         driver.quit()
     return soup
 
+
 def get_table_rows_and_cats(soup, is_season_data, league_id):
     app.logger.info('%s - Starting scraping table_rows and categories', league_id)
     # Scrape objects depending on whether the user asked for season or weekly data.
     if is_season_data:
         categories_list = soup.find_all('thead', class_='Table2__sub-header Table2__thead')[1]
         table_body = soup.find_all('table', class_='Table2__table-scroller Table2__right-aligned Table2__table')[0]
-        rows_class='Table2__tr Table2__tr--md Table2__even'
+        rows_class = 'Table2__tr Table2__tr--md Table2__even'
     else:
         categories_list = soup
         table_body = soup
@@ -231,6 +246,7 @@ def get_table_rows_and_cats(soup, is_season_data, league_id):
     categories = [c.string for c in categories if c.string is not None]
     table_rows = table_body.findAll('tr', {'class': rows_class})
     return table_rows, categories
+
 
 def create_teams_matrix(is_season_data, categories, table_rows, league_id):
     app.logger.info('%s - Creating teams matrix', league_id)
@@ -241,25 +257,27 @@ def create_teams_matrix(is_season_data, categories, table_rows, league_id):
         if is_season_data:
             columns = table_rows[row].findAll('td')
         else:
-            columns = table_rows[row].findAll('td')[1:len(categories)+1]
+            columns = table_rows[row].findAll('td')[1:len(categories) + 1]
         team_row = [c.getText() for c in columns]
         teams.append(team_row)
     return teams
 
+
 def append_team_names(soup, is_season_data, teams, league_id):
     app.logger.info('%s - Appending team names', league_id)
     if is_season_data:
-        table_body_class='Table2__responsiveTable Table2__table-outer-wrap Table2--hasFixed-left Table2--hasFixed-right'
+        table_body_class = 'Table2__responsiveTable Table2__table-outer-wrap Table2--hasFixed-left Table2--hasFixed-right'
         table_body = soup.find_all('section', class_=table_body_class)[0]
         team_names = table_body.find_all('span', class_='teamName truncate')
     else:
         team_names = soup.find_all('div',
-                                  {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
+                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
 
     team_names = [t.string for t in team_names]
     # Add team names for each team
     for idx, team in enumerate(teams):
         team.insert(0, team_names[idx])
+
 
 # Computes the standings and matchups.
 def compute_stats(teams, categories, league_id):
@@ -287,7 +305,7 @@ def compute_stats(teams, categories, league_id):
                     team_dict[team1[0]] -= 1
                 team_matchup.append(list([team1[0], team2[0], score, won_margin, lost_margin, tied_margin]))
         matchups.append(team_matchup)
-    app.logger.info('%s - Sucessfully created matchups/analysis list', league_id)
+    app.logger.info('%s - Successfully created matchups/analysis list', league_id)
     # Check if two keys in the dictionary have the same value (used to process ties in standings score).
     result = {}
     for val in team_dict:
@@ -298,7 +316,7 @@ def compute_stats(teams, categories, league_id):
 
     # Sort the dictionary by greatest standings score.
     rankings = sorted(result.items(), key=itemgetter(0), reverse=True)
-    app.logger.info('%s - Sucessfully calculated rankings', league_id)
+    app.logger.info('%s - Successfully calculated rankings', league_id)
     return rankings, matchups
 
 
@@ -321,12 +339,12 @@ def calculate_score(team1, team2, categories, league_id):
             pass
 
     for idx, (a, b) in enumerate(zip(team1, team2)):
-        if not isfloat(a, league_id):
-            a = 0.0
-        if not isfloat(b, league_id):
-            b = 0.0
-        a = float(a)
-        b = float(b)
+        try:
+            a, b = float(a), float(b)
+        except ValueError as e:
+            app.logger.error('%s - %s', league_id, str(e))
+            a, b = 0.0, 0.0
+
         # When comparing turnovers, having a smaller value is a "win".
         if idx in bad_categories_idx:
             if a < b:
@@ -351,13 +369,6 @@ def calculate_score(team1, team2, categories, league_id):
     score = (wins, losses, ties), won_margin, lost_margin, tied_margin
     return score
 
-def isfloat(value, league_id):
-    try:
-        float(value)
-        return True
-    except ValueError:
-        app.logger.error('%s - Could not convert %s to float', league_id, value)
-        return False
 
 # Run the Flask app.
 if __name__ == '__main__':
