@@ -91,7 +91,7 @@
     {{ show_menu(league_id) }}
     <br />
     {% if 'Weekly' == type %}
-        {{ show_weeks_dropdown(league_id, current_week, weeks, 'weekly_rankings') }}
+        {{ show_weeks_dropdown(league_id, current_week, weeks, 'weekly_matchups') }}
     {% endif %}
     <p>This page shows: taking the whole {% if 'Weekly' == type %} {{ type.lower()[:-2] }} {% else %} {{ type.lower() }}{% endif %}'s data into account, how many categories would you win against each of your
     opponents?</p>
