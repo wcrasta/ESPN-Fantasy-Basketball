@@ -10,7 +10,7 @@ from flask import Flask, render_template, request, redirect, url_for, abort
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from selenium.webdriver.support.expected_conditions import presence_of_element_located
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
 import config
@@ -215,9 +215,9 @@ def run_selenium(url, is_season_data, league_id):
         # Season standings have a different URL than weekly scoreboard
 
         if is_season_data:
-            WebDriverWait(driver, 30).until(presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
+            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
         else:
-            WebDriverWait(driver, 30).until(presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
+            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
         app.logger.info('%s - Element loaded. Sleeping started to get latest data.', league_id)
         time.sleep(5)
         plain_text = driver.page_source
