@@ -205,6 +205,8 @@ def setup(url, league_id):
 def run_selenium(url, is_season_data, league_id):
     options = webdriver.ChromeOptions()
     options.add_argument('headless')
+    options.add_argument('no-sandbox')
+    options.add_argument('disable-dev-shm-usage')
     capa = DesiredCapabilities.CHROME
     capa["pageLoadStrategy"] = "none"
     driver = webdriver.Chrome(chrome_options=options, desired_capabilities=capa)
@@ -221,7 +223,7 @@ def run_selenium(url, is_season_data, league_id):
         app.logger.info('%s - Element loaded. Sleeping started to get latest data.', league_id)
         time.sleep(5)
         plain_text = driver.page_source
-        soup = BeautifulSoup(plain_text, 'lxml')
+        soup = BeautifulSoup(plain_text, 'html.parser')
         app.logger.info('%s - Got BeautifulSoup object', league_id)
     except Exception as ex:
         app.logger.error('%s - Could not get page source.', league_id, ex)
