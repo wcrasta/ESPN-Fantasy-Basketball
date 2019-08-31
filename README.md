@@ -20,4 +20,4 @@ If you do contribute, be advised that it may take some time to get your PR merge
 
 Author: Warren Crasta (warrencrasta@gmail.com)
 
-Collaborator: Wayne Crasta
+Collaborator: Wayne Crasta (wayne.crasta@gmail.com)
