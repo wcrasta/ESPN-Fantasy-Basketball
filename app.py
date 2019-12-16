@@ -115,6 +115,16 @@ def season_analysis():
                            weeks=season_values[2], analysis=season_values[3][1])
 
 
+@app.route('/season_sos', methods=['GET', 'POST'])
+def season_sos():
+    season_values = get_season_sos()
+    league_id = season_values[0]
+    if season_values[1] == 'private':
+        return render_template('index.html', league_id=league_id, private_league=True)
+    return render_template('season_sos.html', league_id=league_id, current_week=season_values[1],
+                           rankings=season_values[2])
+
+
 def endpoints_setup(is_season_data):
     league_id = request.args.get('leagueId')
     app.logger.info('League ID: %s', str(league_id))
@@ -370,6 +380,105 @@ def calculate_score(team1, team2, categories, league_id):
                 lost_margin.append((categories[idx], round((a - b), 4)))
     score = (wins, losses, ties), won_margin, lost_margin, tied_margin
     return score
+
+
+# generates season strength of schedule for each player
+def get_season_sos():
+    league_id = request.args.get('leagueId')
+    app.logger.info('League ID: %s', str(league_id))
+    current_week = get_current_week(league_id)
+    cumulative_opp_wins = {}
+    cumulative_opp_losses = {}
+    cumulative_opp_draws = {}
+    for week in range(1, current_week + 1):
+        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
+            .format(league_id, week)
+        teams, categories, weeks = setup(url, league_id)
+        matchups = get_week_matchups(teams)
+        team_stats = compute_stats(teams, categories, league_id)[1]
+        if not teams or not categories or not team_stats:
+            app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
+            abort(500)
+            sys.exit('Teams, categories, or stats list empty.')
+        team_scores = get_team_scores(team_stats)
+        player_opp_scores = get_player_opp_scores(matchups, team_scores)
+        for player in matchups.keys():
+            if player in cumulative_opp_wins:
+                cumulative_opp_wins[player] += player_opp_scores[0][player]
+            else:
+                cumulative_opp_wins[player] = player_opp_scores[0][player]
+            if player in cumulative_opp_losses:
+                cumulative_opp_losses[player] += player_opp_scores[1][player]
+            else:
+                cumulative_opp_losses[player] = player_opp_scores[1][player]
+            if player in cumulative_opp_draws:
+                cumulative_opp_draws[player] += player_opp_scores[2][player]
+            else:
+                cumulative_opp_draws[player] = player_opp_scores[2][player]
+    avg_opp_wins = {player: (round(wins / current_week, 2)) for (player, wins) in cumulative_opp_wins.items()}
+    avg_opp_losses = {player: (round(losses / current_week, 2)) for (player, losses) in cumulative_opp_losses.items()}
+    avg_opp_draws = {player: (round(draws / current_week, 2)) for (player, draws) in cumulative_opp_draws.items()}
+    sorted_avg_opp_wins = sorted(avg_opp_wins.items(), key=lambda kv:[kv[1], kv[0]], reverse=True)
+    sos_rankings = build_sos_rankings(sorted_avg_opp_wins, avg_opp_losses, avg_opp_draws)
+    return [league_id, current_week, sos_rankings]
+
+
+def build_sos_rankings(sorted_wins, losses, draws):
+    sos_rankings = []
+    rank = 1
+    for team in sorted_wins:
+        team_name = team[0]
+        avg_opp_losses = losses[team_name]
+        avg_opp_draws = draws[team_name]
+        sos_rankings.append([rank, team_name, team[1], avg_opp_losses, avg_opp_draws])
+        rank += 1
+    return sos_rankings
+
+
+# find every player's opponent's win/loss/draw for a week
+def get_player_opp_scores(matchups, team_scores):
+    player_opp_wins = {}
+    player_opp_losses = {}
+    player_opp_draws = {}
+    for player in matchups.keys():
+        player_opp_wins[player] = team_scores[0][matchups[player]]
+        player_opp_losses[player] = team_scores[1][matchups[player]]
+        player_opp_draws[player] = team_scores[2][matchups[player]]
+    return [player_opp_wins, player_opp_losses, player_opp_draws]
+
+
+# create dictionary of team with win/loss/draw value for a week
+def get_team_scores(team_stats):
+    team_scores_wins = {}
+    team_scores_losses = {}
+    team_scores_draws = {}
+    for team in team_stats:
+        team_name = team[0][0]
+        wins = 0
+        losses = 0
+        draws = 0
+        for matchup in team:
+            score = matchup[2]
+            if score[0] > score[1]:
+                wins += 1
+            elif score[0] < score[1]:
+                losses += 1
+            elif score[0] == score[1]:
+                draws += 1
+        team_scores_wins[team_name] = wins
+        team_scores_losses[team_name] = losses
+        team_scores_draws[team_name] = draws
+    return [team_scores_wins, team_scores_losses, team_scores_draws]
+
+
+def get_week_matchups(teams):
+    matchup_dict = {}
+    for i in range(round(len(teams) / 2)):
+        team1 = teams[2*i][0]
+        team2 = teams[2*i+1][0]
+        matchup_dict[team1] = team2
+        matchup_dict[team2] = team1
+    return matchup_dict
 
 
 # Run the Flask app.
