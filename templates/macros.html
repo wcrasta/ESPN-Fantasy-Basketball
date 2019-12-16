@@ -208,3 +208,52 @@
     </body>
     </html>
 {% endmacro %}
+
+{% macro sos_macro(league_id, current_week, rankings) %}
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+        {{ google_analytics() }}
+        <meta charset='UTF-8'>
+        <title>Season Strength of Schedule</title>
+        <style>
+            table, td, th {
+              border: 1px solid black;
+              text-align: center;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 60%
+            }
+        </style>
+    </head>
+    <body>
+    <h1>Strength of Schedule</h1>
+    {{ show_menu(league_id) }}
+    <br />
+    <p>This page shows the strength of schedule for each team. This averages the number of possible wins/losses/draws
+        a player's opponent has each week against other teams over the course of the season. Higher average opponent
+        wins means a harder schedule. Probably does not work for leagues with an odd number of teams. </p>
+    <table>
+        <tr>
+            <th>Ranking</th>
+            <th>Team</th>
+            <th>Avg. Opponent Wins</th>
+            <th>Avg. Opponent Losses</th>
+            <th>Avg. Opponent Draws</th>
+        </tr>
+        {% for team in rankings %}
+            <tr>
+                <td>{{ team[0] }}</td>
+                <td>{{ team[1] }}</td>
+                <td>{{ team[2] }}</td>
+                <td>{{ team[3] }}</td>
+                <td>{{ team[4] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <br/><br/>
+    </body>
+    </html>
+{% endmacro %}
