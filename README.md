@@ -4,6 +4,8 @@ An application that calculates and displays various statistics for ESPN Fantasy 
 
 A live demo of the app can be found at http://fantasy.warrencrasta.com/. If you liked this project, please consider starring the repository.
 
+Due to performance limitations that occur when the code is deployed on the website, there are some useful features that **only exist locally** but are not available through the website. To view these, run the code in the [more-features branch](https://github.com/wcrasta/ESPN-Fantasy-Basketball/tree/more-features).
+
 ## Installation
 1. Create a virtual environment using [venv and Python 3.5](https://docs.python.org/3/library/venv.html) (optional, but highly recommended). Activate the virtual environment.
 2. Run **pip install -r requirements.txt** to install the dependencies for this project.
@@ -21,3 +23,5 @@ If you do contribute, be advised that it may take some time to get your PR merge
 Author: Warren Crasta (warrencrasta@gmail.com)
 
 Collaborator: Wayne Crasta (wayne.crasta@gmail.com)
+
+Collaborator: [richiehu17](https://github.com/richiehu17)

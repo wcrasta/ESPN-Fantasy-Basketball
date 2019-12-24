@@ -13,6 +13,8 @@
     For more information and to see the source code of the project, checkout
     the <a href="https://github.com/wcrasta/ESPN-Fantasy-Basketball" target="_blank">GitHub repository</a>.
     <br/><br/>
+    <font color="black"><strong>NOTE:</strong></font> Running the project locally from the <a href="https://github.com/wcrasta/ESPN-Fantasy-Basketball/tree/more-features" target="_blank">more-features branch</a> will give you access to more features that are not included on the website. One such feature is the ability to determine your Strength of Schedule.
+    <br/><br/>
     <font color="red"><strong>TIP:</strong></font> You can check if your league is public by signing out of your ESPN account or going Incognito and trying to access your league office page.
     <br/>If your league is private, ask your League Manager to make it public in the League Settings so that you guys can use this tool! If your league is private, my application has no way to access your league data.
     <br/><br/>
@@ -21,7 +23,7 @@
 </p>
 
 <form action='/tools' method= 'POST'>
-    <strong>Enter URL of league office/home page (ex: http://fantasy.espn.com/basketball/league?leagueId=224165):</strong><br/>
+    <strong>Enter URL of league office/home page (ex: http://fantasy.espn.com/basketball/league?leagueId=633975):</strong><br/>
     {% if league_id is none %}
             <span style='color:red'>URL entered is incorrect. Please make sure it follows the format above or contact me if the error persists. </span><br/>
     {% endif %}
