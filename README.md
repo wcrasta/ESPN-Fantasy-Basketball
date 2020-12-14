@@ -2,7 +2,7 @@
 
 An application that calculates and displays various statistics for ESPN Fantasy Basketball leagues. The code/application works for (public) leagues of any size that use H2H Most Cat. scoring. It may or may not work for other scoring systems.
 
-A live demo of the app can be found at http://fantasy.warrencrasta.com/. If you liked this project, please consider starring the repository.
+If you liked this project, please consider starring the repository.
 
 Due to performance limitations that occur when the code is deployed on the website, there are some useful features that **only exist locally** but are not available through the website. To view these, run the code in the [more-features branch](https://github.com/wcrasta/ESPN-Fantasy-Basketball/tree/more-features).
 
