@@ -1,3 +1,5 @@
+_As of the start of the 2020-21 Fantasy Basketball season, this project is **no longer being actively worked on**. ESPN changed their website design, which in-turn broke this code. My league has switched to Yahoo and I will be focused on creating tools for Yahoo leagues. I'm still happy to review Pull requests if anyone wants to try and get this project working again. Thanks to all who found this project useful over the years!_
+
 # ESPN-Fantasy-Basketball
 
 An application that calculates and displays various statistics for ESPN Fantasy Basketball leagues. The code/application works for (public) leagues of any size that use H2H Most Cat. scoring. It may or may not work for other scoring systems.
