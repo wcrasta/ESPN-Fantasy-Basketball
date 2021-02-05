@@ -15,6 +15,9 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 import config
 
+import pprint
+
+
 # Create the Flask application.
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -125,6 +128,16 @@ def season_sos():
                            rankings=season_values[2])
 
 
+@app.route('/overall_perf', methods=['GET', 'POST'])
+def overall_perf():
+    season_values = get_overall_perf()
+    league_id = season_values[0]
+    if season_values[1] == 'private':
+        return render_template('index.html', league_id=league_id, private_league=True)
+    return render_template('overall_perf.html', league_id=league_id, current_week=season_values[1],
+                           rankings=season_values[2])
+
+
 def endpoints_setup(is_season_data):
     league_id = request.args.get('leagueId')
     app.logger.info('League ID: %s', str(league_id))
@@ -135,7 +148,7 @@ def endpoints_setup(is_season_data):
         url = 'https://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
             .format(league_id, week)
 
-    teams, categories, weeks = setup(url, league_id)
+    teams, categories, weeks = setup(url, league_id, week)
     stats = compute_stats(teams, categories, league_id)
     if not teams or not categories or not stats:
         app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
@@ -173,7 +186,7 @@ def call_espn_api(league_id):
     return data
 
 
-def setup(url, league_id):
+def setup(url, league_id, week):
     is_season_data = 'standings' in url
     soup = run_selenium(url, is_season_data, league_id)
     if soup is None:
@@ -186,28 +199,31 @@ def setup(url, league_id):
         weeks = soup.find("select", class_='dropdown__select').find_all("option")
         weeks = [w.text for w in weeks]
 
-    try:
-        table_rows, categories = get_table_rows_and_cats(soup, is_season_data, league_id)
-        app.logger.info('%s - Successfully scraped table_rows and categories', league_id)
-    except Exception as ex:
-        app.logger.error('%s - Could not get rows and categories', league_id, ex)
-        abort(500)
-        sys.exit('Could not get rows and categories')
+    # try:
+    #     table_rows, categories = get_table_rows_and_cats(soup, is_season_data, league_id)
+    #     app.logger.info('%s - Successfully scraped table_rows and categories', league_id)
+    # except Exception as ex:
+    #     app.logger.error('%s - Could not get rows and categories', league_id, ex)
+    #     abort(500)
+    #     sys.exit('Could not get rows and categories')
+    #
+    # try:
+    #     teams = create_teams_matrix(is_season_data, categories, table_rows, league_id)
+    #     app.logger.info('%s - Successfully created teams matrix', league_id)
+    # except Exception as ex:
+    #     app.logger.error('%s - Could not create teams matrix', league_id, ex)
+    #     abort(500)
+    #     sys.exit('Could not create teams matrix')
+    # try:
+    #     append_team_names(soup, is_season_data, teams, league_id)
+    #     app.logger.info('%s - Successfully appended team names', league_id)
+    # except Exception as ex:
+    #     app.logger.error('%s - Could not append team names', league_id, ex)
+    #     abort(500)
+    #     sys.exit('Could not append team names'))
 
-    try:
-        teams = create_teams_matrix(is_season_data, categories, table_rows, league_id)
-        app.logger.info('%s - Successfully created teams matrix', league_id)
-    except Exception as ex:
-        app.logger.error('%s - Could not create teams matrix', league_id, ex)
-        abort(500)
-        sys.exit('Could not create teams matrix')
-    try:
-        append_team_names(soup, is_season_data, teams, league_id)
-        app.logger.info('%s - Successfully appended team names', league_id)
-    except Exception as ex:
-        app.logger.error('%s - Could not append team names', league_id, ex)
-        abort(500)
-        sys.exit('Could not append team names')
+    categories = ['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
+    teams = get_scoreboard(league_id, week)
 
     return teams, categories, weeks
 
@@ -219,7 +235,8 @@ def run_selenium(url, is_season_data, league_id):
     options.add_argument('disable-dev-shm-usage')
     capa = DesiredCapabilities.CHROME
     capa["pageLoadStrategy"] = "none"
-    driver = webdriver.Chrome(chrome_options=options, desired_capabilities=capa)
+    chromedriver_loc = 'chromedriver.exe'
+    driver = webdriver.Chrome(chrome_options=options, desired_capabilities=capa, executable_path=chromedriver_loc)
     try:
         app.logger.info('%s - Starting selenium', league_id)
         driver.get(url)
@@ -390,10 +407,13 @@ def get_season_sos():
     cumulative_opp_wins = {}
     cumulative_opp_losses = {}
     cumulative_opp_draws = {}
+    # add 1 to current_week
+    current_week -= 1
     for week in range(1, current_week + 1):
+        app.logger.info('Fetching SOS stats for week %s', str(week))
         url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
             .format(league_id, week)
-        teams, categories, weeks = setup(url, league_id)
+        teams, categories, weeks = setup(url, league_id, week)
         matchups = get_week_matchups(teams)
         team_stats = compute_stats(teams, categories, league_id)[1]
         if not teams or not categories or not team_stats:
@@ -419,11 +439,54 @@ def get_season_sos():
     avg_opp_losses = {player: (round(losses / current_week, 2)) for (player, losses) in cumulative_opp_losses.items()}
     avg_opp_draws = {player: (round(draws / current_week, 2)) for (player, draws) in cumulative_opp_draws.items()}
     sorted_avg_opp_wins = sorted(avg_opp_wins.items(), key=lambda kv:[kv[1], kv[0]], reverse=True)
-    sos_rankings = build_sos_rankings(sorted_avg_opp_wins, avg_opp_losses, avg_opp_draws)
+    sos_rankings = build_rankings(sorted_avg_opp_wins, avg_opp_losses, avg_opp_draws)
     return [league_id, current_week, sos_rankings]
 
 
-def build_sos_rankings(sorted_wins, losses, draws):
+# calculates personal performance for each player
+def get_overall_perf():
+    league_id = request.args.get('leagueId')
+    app.logger.info('League ID: %s', str(league_id))
+    current_week = get_current_week(league_id)
+    cumulative_wins = {}
+    cumulative_losses = {}
+    cumulative_draws = {}
+    # add 1 to current_week
+    current_week -= 1
+    for week in range(1, current_week + 1):
+        app.logger.info('Fetching season performance stats for week %s', str(week))
+        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
+            .format(league_id, week)
+        teams, categories, weeks = setup(url, league_id, week)
+        matchups = get_week_matchups(teams)
+        team_stats = compute_stats(teams, categories, league_id)[1]
+        if not teams or not categories or not team_stats:
+            app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
+            abort(500)
+            sys.exit('Teams, categories, or stats list empty.')
+        team_scores = get_team_scores(team_stats)
+        for player in matchups.keys():
+            if player in cumulative_wins:
+                cumulative_wins[player] += team_scores[0][player]
+            else:
+                cumulative_wins[player] = team_scores[0][player]
+            if player in cumulative_losses:
+                cumulative_losses[player] += team_scores[1][player]
+            else:
+                cumulative_losses[player] = team_scores[1][player]
+            if player in cumulative_draws:
+                cumulative_draws[player] += team_scores[2][player]
+            else:
+                cumulative_draws[player] = team_scores[2][player]
+    avg_wins = {player: (round(wins / current_week, 2)) for (player, wins) in cumulative_wins.items()}
+    avg_losses = {player: (round(losses / current_week, 2)) for (player, losses) in cumulative_losses.items()}
+    avg_draws = {player: (round(draws / current_week, 2)) for (player, draws) in cumulative_draws.items()}
+    sorted_avg_wins = sorted(avg_wins.items(), key=lambda kv:[kv[1], kv[0]], reverse=True)
+    perf_rankings = build_rankings(sorted_avg_wins, avg_losses, avg_draws)
+    return [league_id, current_week, perf_rankings]
+
+
+def build_rankings(sorted_wins, losses, draws):
     sos_rankings = []
     rank = 1
     for team in sorted_wins:
@@ -479,6 +542,82 @@ def get_week_matchups(teams):
         matchup_dict[team1] = team2
         matchup_dict[team2] = team1
     return matchup_dict
+
+
+# create two way dictionary of team id and team name
+def get_team_dict(league_id):
+    url = f'https://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}'
+    data = call_api(url)
+    team_dict = {}
+    for team in data['teams']:
+        team_dict[team['location'] + ' ' + team['nickname']] = team['id']
+        team_dict[team['id']] = team['location'] + ' ' + team['nickname']
+    return team_dict
+
+
+# call espn api allowing for params
+def call_api(url, params=None):
+    try:
+        if params is None:
+            r = requests.get(url)
+        else:
+            r = requests.get(url, params=params)
+    except requests.exceptions.RequestException as ex:
+        print('Could not make ESPN API call')
+    data = r.json()
+    return data
+
+
+# check if val exists, otherwise return 0
+def key_check(stats, key):
+    try:
+        return stats[key]['score']
+    except KeyError:
+        pass
+    return 0
+
+
+def format_team(team_raw, team_dict):
+    team = []
+    team.append(team_dict[team_raw['teamId']])
+    scores = team_raw['cumulativeScore']['scoreByStat']
+    # FG%
+    team.append(key_check(scores, '19'))
+    # FT%
+    team.append(key_check(scores, '20'))
+    # 3PM
+    team.append(key_check(scores, '17'))
+    # REB
+    team.append(key_check(scores, '6'))
+    # AST
+    team.append(key_check(scores, '3'))
+    # STL
+    team.append(key_check(scores, '2'))
+    # BLK
+    team.append(key_check(scores, '1'))
+    # TO
+    team.append(key_check(scores, '11'))
+    # PTS
+    team.append(key_check(scores, '0'))
+    return team
+
+
+def get_scoreboard(league_id, week):
+    params = (('view', ['mScoreboard', 'mMatchupScore']),)
+    data = call_api(f'http://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}',
+                    params=params)
+    team_dict = get_team_dict(league_id)
+    data = data['schedule']
+
+    matchups = [matchup for matchup in data if matchup['matchupPeriodId'] == week or matchup['matchupPeriodId'] == int(week)]
+    scoreboard = []
+    for matchup in matchups:
+        team1 = format_team(matchup['away'], team_dict)
+        team2 = format_team(matchup['home'], team_dict)
+        scoreboard.append(team1)
+        scoreboard.append(team2)
+
+    return scoreboard
 
 
 # Run the Flask app.
