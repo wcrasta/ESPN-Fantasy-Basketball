@@ -217,9 +217,9 @@ def run_selenium(url, is_season_data, league_id):
         # Season standings have a different URL than weekly scoreboard
 
         if is_season_data:
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__sub-header')))
+            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table__header-group')))
         else:
-            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table2__header-row')))
+            WebDriverWait(driver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'Table__sub-header')))
         app.logger.info('%s - Element loaded. Sleeping started to get latest data.', league_id)
         time.sleep(5)
         plain_text = driver.page_source
@@ -237,14 +237,14 @@ def get_table_rows_and_cats(soup, is_season_data, league_id):
     app.logger.info('%s - Starting scraping table_rows and categories', league_id)
     # Scrape objects depending on whether the user asked for season or weekly data.
     if is_season_data:
-        categories_list = soup.find_all('thead', class_='Table2__sub-header Table2__thead')[1]
-        table_body = soup.find_all('table', class_='Table2__table-scroller Table2__right-aligned Table2__table')[0]
-        rows_class = 'Table2__tr Table2__tr--md Table2__even'
+        categories_list = soup.find_all('thead', class_='Table__header-group Table__THEAD')[1]
+        table_body = soup.find_all('table', class_='Table Table--align-right')[0]
+        rows_class = 'Table__TR Table__TR--md Table__even'
     else:
         categories_list = soup
         table_body = soup
-        rows_class = 'Table2__tr Table2__tr--sm Table2__even'
-    categories = categories_list.find('tr', class_='Table2__header-row Table2__tr Table2__even').find_all('th')
+        rows_class = 'Table__TR Table__TR--sm Table__even'
+    categories = categories_list.find('tr', class_='Table__sub-header Table__TR Table__even').find_all('th')
     categories = [c.string for c in categories if c.string is not None]
     table_rows = table_body.findAll('tr', {'class': rows_class})
     return table_rows, categories
@@ -268,8 +268,8 @@ def create_teams_matrix(is_season_data, categories, table_rows, league_id):
 def append_team_names(soup, is_season_data, teams, league_id):
     app.logger.info('%s - Appending team names', league_id)
     if is_season_data:
-        table_body_class = 'Table2__responsiveTable Table2__table-outer-wrap Table2--hasFixed-left Table2--hasFixed-right'
-        table_body = soup.find_all('section', class_=table_body_class)[0]
+        table_body_class = 'Table Table--align-right Table--fixed Table--fixed-left'
+        table_body = soup.find_all('table', class_=table_body_class)[0]
         team_names = table_body.find_all('span', class_='teamName truncate')
     else:
         team_names = soup.find_all('div',
