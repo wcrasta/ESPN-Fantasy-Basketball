@@ -120,9 +120,9 @@ def endpoints_setup(is_season_data):
     app.logger.info('League ID: %s', str(league_id))
     week = get_current_week(league_id)
     if is_season_data:
-        url = 'http://fantasy.espn.com/basketball/league/standings?leagueId={}'.format(league_id)
+        url = 'https://fantasy.espn.com/basketball/league/standings?leagueId={}'.format(league_id)
     else:
-        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
+        url = 'https://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
             .format(league_id, week)
 
     teams, categories, weeks = setup(url, league_id)
@@ -151,7 +151,7 @@ def get_current_week(league_id):
 
 def call_espn_api(league_id):
     app.logger.info('%s - Calling ESPN API', league_id)
-    url = ("http://fantasy.espn.com/apis/v3/games/fba/seasons/{}/segments/0/leagues/{}?view=mMatchupScore&view"
+    url = ("https://fantasy.espn.com/apis/v3/games/fba/seasons/{}/segments/0/leagues/{}?view=mMatchupScore&view"
            "mScoreboard&view=mSettings&view=mTeam&view=modular&view=mNav").format(app.config.get("SEASON"), league_id)
     try:
         r = requests.get(url)
