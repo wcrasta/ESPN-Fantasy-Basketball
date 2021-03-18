@@ -232,24 +232,21 @@
     <h1>Strength of Schedule</h1>
     {{ show_menu(league_id) }}
     <br />
-    <p>This page shows the strength of schedule for each team. This averages the number of possible wins/losses/draws
-        a player's opponent has each week against other teams over the course of the season. Higher average opponent
-        wins means a harder schedule. Probably does not work for leagues with an odd number of teams. </p>
+    <p>This page shows the strength of schedule for each team. This averages the weekly rankings of
+        each player's opponents over the course of the season. Higher average opponent rank
+        means a harder schedule. An average weekly opponent rank of 3 means the team on average faced the 3rd best
+        team each week. Probably does not work for leagues with an odd number of teams. </p>
     <table>
         <tr>
-            <th>Ranking</th>
+            <th>SOS Difficulty Ranking</th>
             <th>Team</th>
-            <th>Avg. Opponent Wins</th>
-            <th>Avg. Opponent Losses</th>
-            <th>Avg. Opponent Draws</th>
+            <th>Avg. Weekly Opponent Rank</th>
         </tr>
         {% for team in rankings %}
             <tr>
                 <td>{{ team[0] }}</td>
                 <td>{{ team[1] }}</td>
                 <td>{{ team[2] }}</td>
-                <td>{{ team[3] }}</td>
-                <td>{{ team[4] }}</td>
             </tr>
         {% endfor %}
     </table>
@@ -281,24 +278,20 @@
     <h1>Overall Performance</h1>
     {{ show_menu(league_id) }}
     <br />
-    <p>This page shows the season performance for each team. This averages the number of possible wins/losses/draws
-        a player has each week against other teams over the course of the season. Higher average
-        wins means better performance. Probably does not work for leagues with an odd number of teams. </p>
+    <p>This page shows the season performance for each team. This averages each player's weekly ranking over the course
+        of the season. Higher average wins means better performance. An average weekly rank of 3 mean the team on
+        average was the 3rd best team each week.Probably does not work for leagues with an odd number of teams. </p>
     <table>
         <tr>
-            <th>Ranking</th>
+            <th>Performance Ranking</th>
             <th>Team</th>
-            <th>Avg. Weekly Wins</th>
-            <th>Avg. Weekly Losses</th>
-            <th>Avg. Weekly Draws</th>
+            <th>Avg. Weekly Rank</th>
         </tr>
         {% for team in rankings %}
             <tr>
                 <td>{{ team[0] }}</td>
                 <td>{{ team[1] }}</td>
                 <td>{{ team[2] }}</td>
-                <td>{{ team[3] }}</td>
-                <td>{{ team[4] }}</td>
             </tr>
         {% endfor %}
     </table>
