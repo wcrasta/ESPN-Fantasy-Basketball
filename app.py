@@ -404,16 +404,17 @@ def get_season_sos():
     league_id = request.args.get('leagueId')
     app.logger.info('League ID: %s', str(league_id))
     current_week = get_current_week(league_id)
+    categories = ['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
+    data = get_scoreboards(league_id)
+
     cumulative_opp_wins = {}
     cumulative_opp_losses = {}
     cumulative_opp_draws = {}
     # add 1 to current_week
-    current_week -= 1
+    # current_week -= 1
     for week in range(1, current_week + 1):
-        app.logger.info('Fetching SOS stats for week %s', str(week))
-        url = 'http://fantasy.espn.com/basketball/league/scoreboard?leagueId={}&matchupPeriodId={}' \
-            .format(league_id, week)
-        teams, categories, weeks = setup(url, league_id, week)
+        teams = get_week_scoreboard(league_id, week, data)
+        stats = compute_stats(teams, categories, league_id)
         matchups = get_week_matchups(teams)
         team_stats = compute_stats(teams, categories, league_id)[1]
         if not teams or not categories or not team_stats:
@@ -602,13 +603,8 @@ def format_team(team_raw, team_dict):
     return team
 
 
-def get_scoreboard(league_id, week):
-    params = (('view', ['mScoreboard', 'mMatchupScore']),)
-    data = call_api(f'http://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}',
-                    params=params)
+def get_week_scoreboard(league_id, week, data):
     team_dict = get_team_dict(league_id)
-    data = data['schedule']
-
     matchups = [matchup for matchup in data if matchup['matchupPeriodId'] == week or matchup['matchupPeriodId'] == int(week)]
     scoreboard = []
     for matchup in matchups:
@@ -618,6 +614,14 @@ def get_scoreboard(league_id, week):
         scoreboard.append(team2)
 
     return scoreboard
+
+
+def get_scoreboards(league_id):
+    params = (('view', ['mScoreboard', 'mMatchupScore']),)
+    data = call_api(f'http://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}',
+                    params=params)
+    data = data['schedule']
+    return data
 
 
 # Run the Flask app.
