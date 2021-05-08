@@ -208,3 +208,94 @@
     </body>
     </html>
 {% endmacro %}
+
+{% macro sos_macro(league_id, current_week, rankings) %}
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+        {{ google_analytics() }}
+        <meta charset='UTF-8'>
+        <title>Season Strength of Schedule</title>
+        <style>
+            table, td, th {
+              border: 1px solid black;
+              text-align: center;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 60%
+            }
+        </style>
+    </head>
+    <body>
+    <h1>Strength of Schedule</h1>
+    {{ show_menu(league_id) }}
+    <br />
+    <p>This page shows the strength of schedule for each team. This averages the weekly rankings of
+        each player's opponents over the course of the season. Lower average opponent rank
+        means a harder schedule. An average weekly opponent rank of 3 means the team on average faced the 3rd best
+        team each week. Probably does not work for leagues with an odd number of teams. </p>
+    <table>
+        <tr>
+            <th>SOS Difficulty Ranking</th>
+            <th>Team</th>
+            <th>Avg. Weekly Opponent Rank</th>
+        </tr>
+        {% for team in rankings %}
+            <tr>
+                <td>{{ team[0] }}</td>
+                <td>{{ team[1] }}</td>
+                <td>{{ team[2] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <br/><br/>
+    </body>
+    </html>
+{% endmacro %}
+
+{% macro perf_macro(league_id, current_week, rankings) %}
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+        {{ google_analytics() }}
+        <meta charset='UTF-8'>
+        <title>Overall Performance</title>
+        <style>
+            table, td, th {
+              border: 1px solid black;
+              text-align: center;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 60%
+            }
+        </style>
+    </head>
+    <body>
+    <h1>Overall Performance</h1>
+    {{ show_menu(league_id) }}
+    <br />
+    <p>This page shows the season performance for each team. This averages each player's weekly ranking over the course
+        of the season. Lower average rank means better performance. An average weekly rank of 3 mean the team on
+        average was the 3rd best team each week.Probably does not work for leagues with an odd number of teams. </p>
+    <table>
+        <tr>
+            <th>Performance Ranking</th>
+            <th>Team</th>
+            <th>Avg. Weekly Rank</th>
+        </tr>
+        {% for team in rankings %}
+            <tr>
+                <td>{{ team[0] }}</td>
+                <td>{{ team[1] }}</td>
+                <td>{{ team[2] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <br/><br/>
+    </body>
+    </html>
+{% endmacro %}
