@@ -464,7 +464,7 @@ def get_season_sos():
         # update player dictionary key with weekly opponent rank
         update_player_opp_rank_sums(player_opp_rank_sums, team_names, matchups, ranks)
     # get weekly average
-    avg_opp_rank = {player: (round(sum_ranks / float(current_week), 2)) for (player, sum_ranks) in player_opp_rank_sums.items()}
+    avg_opp_rank = {player: (round(sum_ranks / float(max_reg_season), 2)) for (player, sum_ranks) in player_opp_rank_sums.items()}
     # convert into rankings to output in html
     sos_rankings = build_rankings(avg_opp_rank)
     return [league_id, current_week, sos_rankings]
@@ -500,7 +500,7 @@ def get_overall_perf():
         update_player_rank_sums(player_rank_sums, team_names, ranks)
 
     # get weekly average
-    avg_player_rank = {player: (round(sum_ranks / float(current_week), 2)) for (player, sum_ranks) in player_rank_sums.items()}
+    avg_player_rank = {player: (round(sum_ranks / float(max_reg_season), 2)) for (player, sum_ranks) in player_rank_sums.items()}
     # convert into rankings to output in html
     perf_rankings = build_rankings(avg_player_rank)
     return [league_id, current_week, perf_rankings]
