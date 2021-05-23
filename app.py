@@ -419,6 +419,18 @@ def get_ranks(raw_rank):
     return ranks
 
 
+# check if a week is a regular season week using playoffTierType key
+# I don't think that key exists earlier in the season so key error returns true
+def reg_season_check(matchup):
+    reg_season = True
+    try:
+        if matchup['playoffTierType'] != 'NONE':
+            reg_season = False
+    except KeyError:
+        pass
+    return reg_season
+
+
 # generates season strength of schedule for each player
 def get_season_sos():
     league_id = request.args.get('leagueId')
@@ -427,10 +439,17 @@ def get_season_sos():
     categories = ['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
     # get all scoreboard data from ESPN api
     data = get_scoreboards(league_id)
+
+    # get max regular season week
+    max_reg_season = 0
+    for matchup in data:
+        if matchup['matchupPeriodId'] > max_reg_season and reg_season_check(matchup):
+            max_reg_season = matchup['matchupPeriodId']
+
     # store opponent rank sums for each player
     player_opp_rank_sums = {}
 
-    for week in range(1, current_week + 1):
+    for week in range(1, max_reg_season + 1):
         # get scoreboard stats for current week
         teams = get_week_scoreboard(league_id, week, data)
         stats = compute_stats(teams, categories, league_id, True)
@@ -445,7 +464,7 @@ def get_season_sos():
         # update player dictionary key with weekly opponent rank
         update_player_opp_rank_sums(player_opp_rank_sums, team_names, matchups, ranks)
     # get weekly average
-    avg_opp_rank = {player: (round(sum_ranks / float(current_week), 2)) for (player, sum_ranks) in player_opp_rank_sums.items()}
+    avg_opp_rank = {player: (round(sum_ranks / float(max_reg_season), 2)) for (player, sum_ranks) in player_opp_rank_sums.items()}
     # convert into rankings to output in html
     sos_rankings = build_rankings(avg_opp_rank)
     return [league_id, current_week, sos_rankings]
@@ -459,9 +478,15 @@ def get_overall_perf():
     categories = ['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
     data = get_scoreboards(league_id)
 
+    # get max regular season week
+    max_reg_season = 0
+    for matchup in data:
+        if matchup['matchupPeriodId'] > max_reg_season and reg_season_check(matchup):
+            max_reg_season = matchup['matchupPeriodId']
+
     player_rank_sums = {}
 
-    for week in range(1, current_week + 1):
+    for week in range(1, max_reg_season + 1):
         teams = get_week_scoreboard(league_id, week, data)
         stats = compute_stats(teams, categories, league_id, True)
         # returns a dictionary with player key and avg rank value
@@ -475,7 +500,7 @@ def get_overall_perf():
         update_player_rank_sums(player_rank_sums, team_names, ranks)
 
     # get weekly average
-    avg_player_rank = {player: (round(sum_ranks / float(current_week), 2)) for (player, sum_ranks) in player_rank_sums.items()}
+    avg_player_rank = {player: (round(sum_ranks / float(max_reg_season), 2)) for (player, sum_ranks) in player_rank_sums.items()}
     # convert into rankings to output in html
     perf_rankings = build_rankings(avg_player_rank)
     return [league_id, current_week, perf_rankings]
