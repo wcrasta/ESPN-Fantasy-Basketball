@@ -399,14 +399,36 @@ def calculate_score(team1, team2, categories, league_id):
 
 # calculate player ranks for a week and return as dictionary
 # uses average rank
-def get_ranks(raw_rank):
+# for consistent season ranking averages
+def get_ranks_avg(raw_rank):
     ranks = {}
     current_rank = 1
     for row in raw_rank:
-        for team_name in row[1]:
-            ranks[team_name] = current_rank
-        current_rank += 1
+        num_teams = len(row[1])
+        # if no ties, rank will be current_rank
+        if num_teams == 1:
+            ranks[row[1][0]] = current_rank
+        # if ties need to find average rank
+        else:
+            # list of ranks that the tied players represent
+            rank_list = list(range(current_rank, current_rank + num_teams))
+            avg_rank = sum(rank_list) / float(num_teams)
+            for player in row[1]:
+                ranks[player] = avg_rank
+        # update current rank
+        current_rank += num_teams
     return ranks
+
+
+# check if a week is a regular season week using playoffTierType key
+# I don't think that key has a value aside from 'NONE' earlier in the season
+def reg_season_check(matchup):
+    reg_season = True
+    if 'playoffTierType' in matchup:
+        if matchup['playoffTierType'] != 'NONE':
+            reg_season = False
+    return reg_season
+
 
 # generates season strength of schedule for each player
 def get_season_sos():
@@ -417,14 +439,31 @@ def get_season_sos():
     # get all scoreboard data from ESPN api
     data = get_scoreboards(league_id)
 
+    # look through matchups to see if there are any active playoff weeks and to store the max regular season week
+    # if there are active playoff weeks we use max regular season week as the final week
+    # else we can just use the current week
+    is_reg_season = True
+    max_reg_season = 0
+    for matchup in data:
+        if matchup['matchupPeriodId'] > max_reg_season and reg_season_check(matchup):
+            max_reg_season = matchup['matchupPeriodId']
+        if not reg_season_check(matchup):
+            is_reg_season = False
+
+    if is_reg_season:
+        final_week = current_week
+    else:
+        final_week = max_reg_season
+
     # store opponent rank sums for each player
     player_opp_rank_sums = {}
-    for week in range(1, current_week + 1):
+
+    for week in range(1, final_week + 1):
         # get scoreboard stats for current week
         teams = get_week_scoreboard(league_id, week, data)
         stats = compute_stats(teams, categories, league_id, True)
         # returns a dictionary with player key and avg rank value
-        ranks = get_ranks(stats[0])
+        ranks = get_ranks_avg(stats[0])
         if not teams or not stats or not ranks:
             app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
             abort(500)
@@ -434,7 +473,7 @@ def get_season_sos():
         # update player dictionary key with weekly opponent rank
         update_player_opp_rank_sums(player_opp_rank_sums, team_names, matchups, ranks)
     # get weekly average
-    avg_opp_rank = {player: (round(sum_ranks / float(current_week), 2)) for (player, sum_ranks) in player_opp_rank_sums.items()}
+    avg_opp_rank = {player: (round(sum_ranks / float(final_week), 2)) for (player, sum_ranks) in player_opp_rank_sums.items()}
     # convert into rankings to output in html
     sos_rankings = build_rankings(avg_opp_rank)
     return [league_id, current_week, sos_rankings]
@@ -448,13 +487,29 @@ def get_overall_perf():
     categories = ['FG%', 'FT%', '3PM', 'REB', 'AST', 'STL', 'BLK', 'TO', 'PTS']
     data = get_scoreboards(league_id)
 
+    # look through matchups to see if there are any active playoff weeks and to store the max regular season week
+    # if there are active playoff weeks we use max regular season week as the final week
+    # else we can just use the current week
+    is_reg_season = True
+    max_reg_season = 0
+    for matchup in data:
+        if matchup['matchupPeriodId'] > max_reg_season and reg_season_check(matchup):
+            max_reg_season = matchup['matchupPeriodId']
+        if not reg_season_check(matchup):
+            is_reg_season = False
+
+    if is_reg_season:
+        final_week = current_week
+    else:
+        final_week = max_reg_season
+
     player_rank_sums = {}
 
-    for week in range(1, current_week + 1):
+    for week in range(1, final_week + 1):
         teams = get_week_scoreboard(league_id, week, data)
         stats = compute_stats(teams, categories, league_id, True)
         # returns a dictionary with player key and avg rank value
-        ranks = get_ranks(stats[0])
+        ranks = get_ranks_avg(stats[0])
         if not teams or not stats or not ranks:
             app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
             abort(500)
@@ -464,7 +519,7 @@ def get_overall_perf():
         update_player_rank_sums(player_rank_sums, team_names, ranks)
 
     # get weekly average
-    avg_player_rank = {player: (round(sum_ranks / float(current_week), 2)) for (player, sum_ranks) in player_rank_sums.items()}
+    avg_player_rank = {player: (round(sum_ranks / float(final_week), 2)) for (player, sum_ranks) in player_rank_sums.items()}
     # convert into rankings to output in html
     perf_rankings = build_rankings(avg_player_rank)
     return [league_id, current_week, perf_rankings]
