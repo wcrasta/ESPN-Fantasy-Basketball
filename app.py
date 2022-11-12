@@ -1,8 +1,10 @@
+import json
 import logging
 import sys
 import urllib.parse as urlparse
 from operator import itemgetter
 import time
+from typing import List, Type
 
 import requests
 from bs4 import BeautifulSoup
@@ -135,6 +137,14 @@ def overall_perf():
                            rankings=season_values[2])
 
 
+@app.route('/roster_analyzer', methods=['GET', 'POST'])
+def roster_analyzer():
+    team_rosters = get_each_teams_players()
+    season_values = endpoints_setup(True)
+    cleaned_up_season_values = cleanup_season_values_and_get_average_per_roster_spot(season_values[4], team_rosters)
+    return render_template('roster_analyzer.html', team_rosters=team_rosters, season_values=cleaned_up_season_values)
+
+
 def endpoints_setup(is_season_data):
     league_id = request.args.get('leagueId')
     app.logger.info('League ID: %s', str(league_id))
@@ -151,7 +161,7 @@ def endpoints_setup(is_season_data):
         app.logger.error('%s - Teams, categories, or stats list empty.', str(league_id))
         abort(500)
         sys.exit('Teams, categories, or stats list empty.')
-    endpoints_params = league_id, week, weeks, stats
+    endpoints_params = league_id, week, weeks, stats, teams
     return endpoints_params
 
 
@@ -317,7 +327,8 @@ def compute_stats(teams, categories, league_id, quiet):
         for team2 in teams:
             if team1 != team2:
                 try:
-                    score, won_margin, lost_margin, tied_margin = calculate_score(team1[1:], team2[1:], categories, league_id)
+                    score, won_margin, lost_margin, tied_margin = calculate_score(team1[1:], team2[1:], categories,
+                                                                                  league_id)
                 except Exception as ex:
                     app.logger.error('%s - Could not calculate score.', league_id, ex)
                     abort(500)
@@ -473,7 +484,8 @@ def get_season_sos():
         # update player dictionary key with weekly opponent rank
         update_player_opp_rank_sums(player_opp_rank_sums, team_names, matchups, ranks)
     # get weekly average
-    avg_opp_rank = {player: (round(sum_ranks / float(final_week), 2)) for (player, sum_ranks) in player_opp_rank_sums.items()}
+    avg_opp_rank = {player: (round(sum_ranks / float(final_week), 2)) for (player, sum_ranks) in
+                    player_opp_rank_sums.items()}
     # convert into rankings to output in html
     sos_rankings = build_rankings(avg_opp_rank)
     return [league_id, current_week, sos_rankings]
@@ -519,7 +531,8 @@ def get_overall_perf():
         update_player_rank_sums(player_rank_sums, team_names, ranks)
 
     # get weekly average
-    avg_player_rank = {player: (round(sum_ranks / float(final_week), 2)) for (player, sum_ranks) in player_rank_sums.items()}
+    avg_player_rank = {player: (round(sum_ranks / float(final_week), 2)) for (player, sum_ranks) in
+                       player_rank_sums.items()}
     # convert into rankings to output in html
     perf_rankings = build_rankings(avg_player_rank)
     return [league_id, current_week, perf_rankings]
@@ -527,7 +540,7 @@ def get_overall_perf():
 
 # convert dictionary with average player ranks to table with general rank, team, and avg rank
 def build_rankings(avg_ranks):
-    sorted_avg_rank = sorted(avg_ranks.items(), key=lambda kv:[kv[1], kv[0]], reverse=False)
+    sorted_avg_rank = sorted(avg_ranks.items(), key=lambda kv: [kv[1], kv[0]], reverse=False)
     rankings = []
     rank = 1
     for team in sorted_avg_rank:
@@ -562,8 +575,8 @@ def update_player_rank_sums(player_rank_sums, team_names, ranks):
 def get_week_matchups(teams):
     matchup_dict = {}
     for i in range(round(len(teams) / 2)):
-        team1 = teams[2*i][0]
-        team2 = teams[2*i+1][0]
+        team1 = teams[2 * i][0]
+        team2 = teams[2 * i + 1][0]
         matchup_dict[team1] = team2
         matchup_dict[team2] = team1
     return matchup_dict
@@ -581,18 +594,138 @@ def get_team_dict(league_id):
 
 
 # call espn api allowing for params
-def call_api(url, params=None):
+def call_api(url, params=None, headers=None):
     try:
         if params is None:
             r = requests.get(url)
         else:
-            r = requests.get(url, params=params)
+            r = requests.get(url, params=params, headers=headers)
     except requests.exceptions.RequestException as ex:
         app.logger.error('Could not make ESPN API call.', ex)
         abort(500)
         sys.exit('Could not make ESPN API call.')
     data = r.json()
     return data
+
+
+# get each team's rostered players
+def get_each_teams_players():
+    league_id = request.args.get('leagueId')
+    url = f'https://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}'
+    params = {
+        'view': 'mRoster'
+    }
+    data = call_api(url, params)
+    team_rosters = {}
+    team_dict = get_team_dict(league_id)
+    for team in data['teams']:
+        team_roster = {}
+        team_players = team['roster']['entries']
+        for player in team_players:
+            full_name = player['playerPoolEntry']['player']['fullName']
+            team_roster[full_name] = stats_cleanup(player['playerPoolEntry']['player']['stats'])
+        # Store the roster and each player's stats in a dict of team roster by team names
+        team_rosters[team_dict[team["id"]]] = team_roster
+    return team_rosters
+
+
+def stats_cleanup(stats):
+    # The stats dict has a couple of different average stats. We can find the actual stat timeframe using the
+    # following info:
+    # seasonId: season end year
+    # stat source: 0 = actual, 1 = projected
+    # stat split type: 0 = season, 1 = 7 days, 2 = 15 days, 3 = 30 days
+    current_year = int(app.config.get("SEASON"))
+    previous_year = current_year - 1
+    cleaned_up_stats = {}
+    for stat in stats:
+        if stat['seasonId'] == current_year and stat['statSourceId'] == 0:
+            if stat['statSplitTypeId'] == 0:
+                cleaned_up_stats[str(current_year) + " Season"] = {"FG%": 0, "FGM": 0, "FGA": 0, "FT%": 0, "FTM": 0,
+                                                                   "FTA": 0, "3PM": 0,
+                                                                   "REB": 0, "AST": 0, "STL": 0, "BLK": 0, "TO": 0,
+                                                                   "PTS": 0, "GP": 0}
+            elif stat['statSplitTypeId'] == 1:
+                cleaned_up_stats["Last 7"] = {"FG%": 0, "FGM": 0, "FGA": 0, "FT%": 0, "FTM": 0, "FTA": 0, "3PM": 0,
+                                              "REB": 0, "AST": 0, "STL": 0, "BLK": 0, "TO": 0, "PTS": 0}
+            elif stat['statSplitTypeId'] == 2:
+                cleaned_up_stats["Last 15"] = {"FG%": 0, "FGM": 0, "FGA": 0, "FT%": 0, "FTM": 0, "FTA": 0, "3PM": 0,
+                                               "REB": 0, "AST": 0, "STL": 0, "BLK": 0, "TO": 0, "PTS": 0}
+            elif stat['statSplitTypeId'] == 3:
+                cleaned_up_stats["Last 30"] = {"FG%": 0, "FGM": 0, "FGA": 0, "FT%": 0, "FTM": 0, "FTA": 0, "3PM": 0,
+                                               "REB": 0, "AST": 0, "STL": 0, "BLK": 0, "TO": 0, "PTS": 0}
+        elif stat['seasonId'] == current_year:
+            cleaned_up_stats[str(current_year) + " Projections"] = {"FG%": 0, "FGM": 0, "FGA": 0, "FT%": 0, "FTM": 0,
+                                                                    "FTA": 0,
+                                                                    "3PM": 0, "REB": 0, "AST": 0, "STL": 0, "BLK": 0,
+                                                                    "TO": 0, "PTS": 0}
+        elif stat['seasonId'] == previous_year and stat['statSourceId'] == 0:
+            cleaned_up_stats[str(previous_year) + " Season"] = {"FG%": 0, "FGM": 0, "FGA": 0, "FT%": 0, "FTM": 0,
+                                                                "FTA": 0, "3PM": 0,
+                                                                "REB": 0, "AST": 0, "STL": 0, "BLK": 0, "TO": 0,
+                                                                "PTS": 0}
+
+    # Currently only the current season stats are used. We can use the other stats with a drop down on the UI though
+    i = 0
+    for stat_timeframe in cleaned_up_stats:
+        if 'averageStats' in stats[i]:
+            if stats[i]['seasonId'] == current_year and stats[i]['statSourceId'] == 0 and stats[i]['statSplitTypeId'] == 0:
+                cleaned_up_stats[stat_timeframe]["GP"] = stats[i]['stats']["42"]
+                # We use the total number of games played for the current season to help us with stat comparisons later
+            if "19" in stats[i]['averageStats']:
+                # Only show up to 3 decimal points for a cleaner display
+                cleaned_up_stats[stat_timeframe]["FG%"] = round(stats[i]['averageStats']["19"], 3)
+            if "13" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["FGM"] = round(stats[i]['averageStats']["13"], 3)
+            if "14" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["FGA"] = round(stats[i]['averageStats']["14"], 3)
+            if "20" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["FT%"] = round(stats[i]['averageStats']["20"], 3)
+            if "15" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["FTM"] = round(stats[i]['averageStats']["15"], 3)
+            if "16" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["FTA"] = round(stats[i]['averageStats']["16"], 3)
+            if "17" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["3PM"] = round(stats[i]['averageStats']["17"], 3)
+            if "6" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["REB"] = round(stats[i]['averageStats']["6"], 3)
+            if "3" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["AST"] = round(stats[i]['averageStats']["3"], 3)
+            if "2" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["STL"] = round(stats[i]['averageStats']["2"], 3)
+            if "1" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["BLK"] = round(stats[i]['averageStats']["1"], 3)
+            if "11" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["TO"] = round(stats[i]['averageStats']["11"], 3)
+            if "0" in stats[i]['averageStats']:
+                cleaned_up_stats[stat_timeframe]["PTS"] = round(stats[i]['averageStats']["0"], 3)
+        i += 1
+    return cleaned_up_stats
+
+
+def cleanup_season_values_and_get_average_per_roster_spot(season_values, team_rosters):
+    current_year = app.config.get("SEASON")
+    cleaned_up = {}
+    for teams_season_value in season_values:
+        number_of_games = 0
+        for player in team_rosters[teams_season_value[0]]:
+            # Iterate through each team's roster and calculate how many games each player has played this season.
+            # We use this to divide season total stats (non percentage stats) to determine if each rostered player helps
+            # or hurts a team in that category. This isn't perfect though. Some things to consider:
+            # Was the player benched?
+            # Was the player streamed?
+            # If number of games is incorrect, we incorrectly show if a user helps or hurts a team's category
+            number_of_games += team_rosters[teams_season_value[0]][player][current_year + " Season"]["GP"]
+        categories = {"FG%": float(teams_season_value[1]), "FT%": float(teams_season_value[2]),
+                      "3PM": float(teams_season_value[3]) / number_of_games,
+                      "REB": float(teams_season_value[4]) / number_of_games,
+                      "AST": float(teams_season_value[5]) / number_of_games,
+                      "STL": float(teams_season_value[6]) / number_of_games,
+                      "BLK": float(teams_season_value[7]) / number_of_games,
+                      "TO": float(teams_season_value[8]) / number_of_games,
+                      "PTS": float(teams_season_value[9]) / number_of_games}
+        cleaned_up[teams_season_value[0]] = categories
+    return cleaned_up
 
 
 # check if val exists, otherwise return 0
@@ -633,7 +766,8 @@ def format_team(team_raw, team_dict):
 # filter all scoreboards for current week scoreboard and format
 def get_week_scoreboard(league_id, week, data):
     team_dict = get_team_dict(league_id)
-    matchups = [matchup for matchup in data if matchup['matchupPeriodId'] == week or matchup['matchupPeriodId'] == int(week)]
+    matchups = [matchup for matchup in data if
+                matchup['matchupPeriodId'] == week or matchup['matchupPeriodId'] == int(week)]
     scoreboard = []
     for matchup in matchups:
         team1 = format_team(matchup['away'], team_dict)
@@ -646,8 +780,9 @@ def get_week_scoreboard(league_id, week, data):
 # ESPN scoreboard api call, mMatchupScore param is necessary to get the important 'matchupPeriodId' key
 def get_scoreboards(league_id):
     params = (('view', ['mScoreboard', 'mMatchupScore']),)
-    data = call_api(f'http://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}',
-                    params=params)
+    data = call_api(
+        f'http://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}',
+        params=params)
     data = data['schedule']
     return data
 

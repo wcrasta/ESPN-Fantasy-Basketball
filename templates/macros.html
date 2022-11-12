@@ -299,3 +299,129 @@
     </body>
     </html>
 {% endmacro %}
+
+{% macro roster_macro(team_rosters, season_rosters) %}
+    <!DOCTYPE html>
+    <html lang='en'>
+    <head>
+        {{ google_analytics() }}
+        <meta charset='UTF-8'>
+        <title>Roster Analysis</title>
+        <style>
+            table, td, th {
+              border: 1px solid black;
+              text-align: center;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 60%
+            }
+        </style>
+    </head>
+    <body>
+    <h1>Roster Analysis</h1>
+    {{ show_menu(league_id) }}
+    <br />
+    <p> An analysis of how each player contributes to each team's stadings. If a player's season stats are a net benefit to your team's season stats, they will be displayed green. Otherwise, they will be displayed in red. </p>
+    <table>
+        <tr>
+            <th>Team</th>
+            <th>Roster stats</th>
+        </tr>
+        {% for team in team_rosters %}
+            <tr>
+                <td>{{ team }}</td>
+                <td>
+                    <!-- Nested table to display each team's roster and each player's stats -->
+                    <table>
+                    <tr>
+                        <th>Player</th>
+                        <th>FG%</th>
+                        <th>FGM</th>
+                        <th>FGA</th>
+                        <th>FT%</th>
+                        <th>FTM</th>
+                        <th>FTA</th>
+                        <th>3PM</th>
+                        <th>REB</th>
+                        <th>AST</th>
+                        <th>STL</th>
+                        <th>BLK</th>
+                        <th>TO</th>
+                        <th>PTS</th>
+                    </tr>
+                {% for player in team_rosters[team] %}
+                    <tr>
+                        <td>{{player}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['FG%'] > season_rosters[team]['FG%'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <!-- Sorry for the repeated code here! -->
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['FG%']}}</td>
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['FGM']}}</td>
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['FGA']}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['FT%'] > season_rosters[team]['FT%'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['FT%']}}</td>
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['FTM']}}</td>
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['FTA']}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['3PM'] > season_rosters[team]['3PM'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['3PM']}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['REB'] > season_rosters[team]['REB'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['REB']}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['AST'] > season_rosters[team]['AST'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['AST']}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['STL'] > season_rosters[team]['STL'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['STL']}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['BLK'] > season_rosters[team]['BLK'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['BLK']}}</td>
+                        <!-- flipped the conditional for turnovers -->
+                        {% if team_rosters[team][player]['2023 Season']['TO'] < season_rosters[team]['TO'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['TO']}}</td>
+                        {% if team_rosters[team][player]['2023 Season']['PTS'] > season_rosters[team]['PTS'] %}
+                            {% set color = 'green' %}
+                        {% else %}
+                            {% set color = 'red' %}
+                        {% endif %}
+                        <td style="color:{{ color }}">{{team_rosters[team][player]['2023 Season']['PTS']}}</td>
+                {% endfor %}
+                    </tr>
+                </table>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+    <br/><br/>
+    </body>
+    </html>
+{% endmacro %}
