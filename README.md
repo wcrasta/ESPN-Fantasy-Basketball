@@ -1,5 +1,7 @@
 # ESPN-Fantasy-Basketball
 
+**NOTE:** As of April 22, 2023, this project is no longer being maintained.
+
 https://espnfantasy.warrencrasta.com
 
 An application that calculates and displays various statistics for ESPN Fantasy Basketball leagues. The code/application works for (public) leagues of any size that use H2H Most Cat. scoring. It may or may not work for other scoring systems. A Yahoo equivalent is [here](https://github.com/wcrasta/yahoo-fantasy-basketball).
