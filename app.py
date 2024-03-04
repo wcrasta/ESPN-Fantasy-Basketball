@@ -22,7 +22,7 @@ app.config.from_object(config.ProductionConfig)
 
 
 @app.errorhandler(500)
-def abort_error():
+def abort_error(error):
     return render_template('error.html'), 500
 
 
@@ -295,7 +295,7 @@ def append_team_names(soup, is_season_data, teams, league_id):
         team_names = table_body.find_all('span', class_='teamName truncate')
     else:
         team_names = soup.find_all('div',
-                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
+                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName db'})
 
     team_names = [t.string for t in team_names]
     # Add team names for each team
