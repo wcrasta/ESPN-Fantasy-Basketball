@@ -171,7 +171,7 @@ def get_current_week(league_id):
 
 def call_espn_api(league_id):
     app.logger.info('%s - Calling ESPN API', league_id)
-    url = ("https://fantasy.espn.com/apis/v3/games/fba/seasons/{}/segments/0/leagues/{}?view=mMatchupScore&view"
+    url = ("https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/{}/segments/0/leagues/{}?view=mMatchupScore&view"
            "mScoreboard&view=mSettings&view=mTeam&view=modular&view=mNav").format(app.config.get("SEASON"), league_id)
     try:
         r = requests.get(url)
@@ -295,7 +295,7 @@ def append_team_names(soup, is_season_data, teams, league_id):
         team_names = table_body.find_all('span', class_='teamName truncate')
     else:
         team_names = soup.find_all('div',
-                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName db'})
+                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
 
     team_names = [t.string for t in team_names]
     # Add team names for each team
@@ -571,7 +571,7 @@ def get_week_matchups(teams):
 
 # create two way dictionary of team id and team name
 def get_team_dict(league_id):
-    url = f'https://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}'
+    url = f'https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}'
     data = call_api(url)
     team_dict = {}
     for team in data['teams']:
@@ -646,7 +646,7 @@ def get_week_scoreboard(league_id, week, data):
 # ESPN scoreboard api call, mMatchupScore param is necessary to get the important 'matchupPeriodId' key
 def get_scoreboards(league_id):
     params = (('view', ['mScoreboard', 'mMatchupScore']),)
-    data = call_api(f'http://fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}',
+    data = call_api(f'https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}',
                     params=params)
     data = data['schedule']
     return data
