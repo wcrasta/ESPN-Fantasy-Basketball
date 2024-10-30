@@ -295,7 +295,7 @@ def append_team_names(soup, is_season_data, teams, league_id):
         team_names = table_body.find_all('span', class_='teamName truncate')
     else:
         team_names = soup.find_all('div',
-                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName truncate db'})
+                                   {'class': 'ScoreCell__TeamName ScoreCell__TeamName--shortDisplayName db'})
 
     team_names = [t.string for t in team_names]
     # Add team names for each team
@@ -568,17 +568,13 @@ def get_week_matchups(teams):
         matchup_dict[team2] = team1
     return matchup_dict
 
-
-# create two way dictionary of team id and team name
 def get_team_dict(league_id):
     url = f'https://lm-api-reads.fantasy.espn.com/apis/v3/games/fba/seasons/{app.config.get("SEASON")}/segments/0/leagues/{league_id}'
     data = call_api(url)
     team_dict = {}
     for team in data['teams']:
-        team_dict[team['location'] + ' ' + team['nickname']] = team['id']
-        team_dict[team['id']] = team['location'] + ' ' + team['nickname']
+        team_dict[team['id']] = team['abbrev']
     return team_dict
-
 
 # call espn api allowing for params
 def call_api(url, params=None):
@@ -606,8 +602,7 @@ def key_check(stats, key):
 
 # format espn api call info into 9-cat team info
 def format_team(team_raw, team_dict):
-    team = []
-    team.append(team_dict[team_raw['teamId']])
+    team = [team_dict[team_raw['teamId']]]
     scores = team_raw['cumulativeScore']['scoreByStat']
     # FG%
     team.append(key_check(scores, '19'))
