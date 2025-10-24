@@ -1,6 +1,6 @@
 class Config(object):
     DEBUG = False
-    SEASON = '2025'
+    SEASON = '2026'
 
 class ProductionConfig(Config):
     DEBUG = False
